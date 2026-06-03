@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>PAWN OF THE DEAD — Browse</title>
+  <link rel="stylesheet" href="../css/style.css"/>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Barlow:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+</head>
+<body>
+  <div class="scanlines"></div>
+  <div class="noise"></div>
+
+  <div class="phone-container">
+    <div class="phone-screen">
+      <header>
+        <h1>PAWN OF THE DEAD</h1>
+        <p>Browse Our Cursed Inventory</p>
+      </header>
+
+      <main class="active">
+        <div class="stat-box">
+          <div class="label">Welcome to the Crypt</div>
+          <div class="value">☠️</div>
+        </div>
+
+        <h2 style="color: var(--accent-orange); font-size: 0.9rem; margin: 15px 0 10px; text-transform: uppercase;">Featured Items</h2>
+
+        <div id="itemsContainer">
+          <!-- Items will be loaded here from Firebase -->
+          <p style="color: var(--primary-text); text-align: center; padding: 20px;">Loading inventory...</p>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <!-- Firebase compat SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+
+  <script>
+    const FIREBASE_CONFIG = {
+      apiKey: "YOUR_API_KEY",
+      authDomain: "your-project.firebaseapp.com",
+      projectId: "your-project-id",
+      storageBucket: "your-project.appspot.com",
+      messagingSenderId: "YOUR_MESSAGING_ID",
+      appId: "YOUR_APP_ID"
+    };
+
+    firebase.initializeApp(FIREBASE_CONFIG);
+    const db = firebase.firestore();
+
+    async function loadInventory() {
+      try {
+        const snapshot = await db.collection("items").where("visible", "==", true).get();
+        const container = document.getElementById("itemsContainer");
+        container.innerHTML = "";
+
+        if (snapshot.empty) {
+          container.innerHTML = "<p style='color: var(--primary-text); text-align: center;'>Inventory depleted...</p>";
+          return;
+        }
+
+        snapshot.forEach(doc => {
+          const item = doc.data();
+          const html = `
+            <div class="item-card">
+              <h3>${item.name}</h3>
+              <p>${item.description}</p>
+              <p><strong>Category:</strong> ${item.category}</p>
+              <div class="price">$${item.price}</div>
+              <span class="condition ${item.condition}">${item.condition.toUpperCase()}</span>
+            </div>
+          `;
+          container.innerHTML += html;
+        });
+      } catch(e) {
+        console.error("Error loading inventory:", e);
+      }
+    }
+
+    loadInventory();
+  </script>
+</body>
+</html>

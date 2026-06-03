@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>BLOODLINE — Access</title>
+  <title>PAWN OF THE DEAD — Access</title>
   <link rel="stylesheet" href="css/style.css"/>
   <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Barlow:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
 </head>
@@ -13,9 +13,9 @@
 
   <div class="login-wrap">
     <div class="login-brand">
-      <div class="brand-icon">🩸</div>
-      <h1 class="brand-title">BLOODLINE</h1>
-      <p class="brand-sub">BLOOD MAKES YOU RELATED, LOYALTY MAKES YOU FAMILY</p>
+      <div class="brand-icon">☠️</div>
+      <h1 class="brand-title">PAWN OF THE DEAD</h1>
+      <p class="brand-sub">UNDEAD MERCHANDISE • CURSED ANTIQUITIES</p>
     </div>
 
     <div class="login-box">
@@ -24,27 +24,25 @@
       <div class="corner bl"></div>
       <div class="corner br"></div>
 
-      <h2 class="login-heading">IDENTIFY YOURSELF</h2>
+      <h2 class="login-heading">STAFF ACCESS</h2>
 
       <div class="field-group">
-        <label class="field-label">HANDLE</label>
-        <input type="text" id="loginName" class="field-input" placeholder="your street name" autocomplete="off"/>
+        <label class="field-label">USERNAME</label>
+        <input type="text" id="loginName" class="field-input" placeholder="enter your name" autocomplete="off"/>
       </div>
 
       <div class="field-group">
-        <label class="field-label">ACCESS CODE</label>
+        <label class="field-label">PASSWORD</label>
         <input type="password" id="loginPass" class="field-input" placeholder="••••••••"/>
       </div>
 
-
-
-      <button class="btn-primary" onclick="doLogin()">ENTER THE BLOODLINE</button>
+      <button class="btn-primary" onclick="doLogin()">ENTER THE CRYPT</button>
 
       <p id="loginError" class="login-error"></p>
       <p id="debugLine" style="font-family:monospace;font-size:0.6rem;color:#555;text-align:center;margin-top:0.5rem;word-break:break-all;min-height:1rem;"></p>
     </div>
 
-    <p class="login-footer">BLOODLINE &copy; — Blood makes you related, Loyalty makes you Family.</p>
+    <p class="login-footer">PAWN OF THE DEAD &copy; — We buy the dead, we sell the damned.</p>
   </div>
 
   <!-- Firebase compat SDKs (no ES module imports needed) -->
@@ -53,15 +51,15 @@
 
   <script>
     // ============================================================
-    // PASTE YOUR FIREBASE CONFIG HERE
+    // FIREBASE CONFIG - UPDATE WITH YOUR PROJECT DETAILS
     // ============================================================
     const FIREBASE_CONFIG = {
-      apiKey: "AIzaSyC6El4QT2--ecQNWV18e-4L4s26iol_eUk",
-      authDomain: "bloodline-efc76.firebaseapp.com",
-      projectId: "bloodline-efc76",
-      storageBucket: "bloodline-efc76.firebasestorage.app",
-      messagingSenderId: "97046048461",
-      appId: "1:97046048461:web:e1bdc760f130fb72830384"
+      apiKey: "YOUR_API_KEY",
+      authDomain: "your-project.firebaseapp.com",
+      projectId: "your-project-id",
+      storageBucket: "your-project.appspot.com",
+      messagingSenderId: "YOUR_MESSAGING_ID",
+      appId: "YOUR_APP_ID"
     };
     // ============================================================
 
@@ -72,7 +70,7 @@
       document.getElementById("debugLine").textContent = msg;
     }
 
-async function doLogin() {
+    async function doLogin() {
       const handle = document.getElementById("loginName").value.trim().toLowerCase();
       const pass   = document.getElementById("loginPass").value;
       const err    = document.getElementById("loginError");
@@ -80,13 +78,13 @@ async function doLogin() {
       debug("Attempting login for: " + handle);
 
       if (!handle || !pass) {
-        err.textContent = "⚠ Fill in all fields, soldier.";
+        err.textContent = "⚠ Fill in all fields, staff member.";
         return;
       }
 
       try {
-        debug("Connecting to Firestore...");
-        const userDoc = await db.collection("users").doc(handle).get();
+        debug("Connecting to Crypt...");
+        const userDoc = await db.collection("staff").doc(handle).get();
         debug("Response received. Found: " + userDoc.exists);
 
         if (!userDoc.exists) {
@@ -105,11 +103,11 @@ async function doLogin() {
         }
 
         debug("Access granted. Loading...");
-        sessionStorage.setItem("bl_user",    handle);
-        sessionStorage.setItem("bl_role",    data.role);
-        sessionStorage.setItem("bl_display", data.displayName || handle);
+        sessionStorage.setItem("potd_user",    handle);
+        sessionStorage.setItem("potd_role",    data.role);
+        sessionStorage.setItem("potd_display", data.displayName || handle);
 
-        window.location.href = "pages/dashboard.html";
+        window.location.href = "pages/staff-dashboard.html";
 
       } catch(e) {
         err.textContent = "⚠ System error.";
