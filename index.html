@@ -50,7 +50,6 @@
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
   <script>
-    // Wait for Firebase to load
     let db = null;
     let fbReady = false;
 
@@ -117,14 +116,13 @@
         sessionStorage.setItem("potd_role", data.role || "staff");
         sessionStorage.setItem("potd_display", data.displayName || user);
 
-        window.location.href = "pages/staff-dashboard.html";
+        window.location.href = "staff-dashboard.html";
       } catch(e) {
         errEl.textContent = "⚠ " + e.message;
         console.error(e);
       }
     }
 
-    // Initialize when page loads
     window.addEventListener("load", initFirebase);
     document.addEventListener("keydown", e => { if (e.key === "Enter") handleLogin(); });
   </script>

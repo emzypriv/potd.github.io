@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>PAWN OF THE DEAD — Staff Dashboard</title>
+  <link rel="stylesheet" href="css/style.css"/>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Barlow:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+</head>
+<body>
+  <div class="phone-container">
+    <div class="phone-screen">
+      <header>
+        <h1>PAWN OF THE DEAD</h1>
+        <p>Staff Dashboard</p>
+        <nav>
+          <button class="nav-btn active" onclick="switchPage('inventory', this)">Inventory</button>
+          <button class="nav-btn" onclick="switchPage('add', this)">Add Item</button>
+          <button class="nav-btn" onclick="switchPage('edit', this)">Edit</button>
+          <button class="nav-btn" onclick="doLogout()">Logout</button>
+        </nav>
+      </header>
+
+      <!-- INVENTORY -->
+      <main id="inventory" class="active">
+        <h2 style="color: var(--primary-text); font-size: 0.9rem; margin: 10px 0; text-transform: uppercase;">Current Stock</h2>
+        <div id="inventoryList"><p style="color: var(--light-text);">Loading...</p></div>
+      </main>
+
+      <!-- ADD ITEM -->
+      <main id="add">
+        <h2 style="color: var(--primary-text); font-size: 0.9rem; margin: 10px 0; text-transform: uppercase;">Register Item</h2>
+        <form onsubmit="addItem(event)">
+          <div class="form-group">
+            <label>Name</label>
+            <input type="text" id="itemName" required />
+          </div>
+          <div class="form-group">
+            <label>Description</label>
+            <textarea id="itemDesc" required></textarea>
+          </div>
+          <div class="form-group">
+            <label>Category</label>
+            <select id="itemCat" required>
+              <option value="">Select</option>
+              <option value="weapons">Weapons</option>
+              <option value="jewelry">Jewelry</option>
+              <option value="electronics">Electronics</option>
+              <option value="furniture">Furniture</option>
+              <option value="antiques">Antiques</option>
+              <option value="cursed">Cursed</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Price</label>
+            <input type="number" id="itemPrice" step="0.01" required />
+          </div>
+          <div class="form-group">
+            <label>Condition</label>
+            <select id="itemCond" required>
+              <option value="mint">Mint</option>
+              <option value="excellent">Excellent</option>
+              <option value="good">Good</option>
+              <option value="fair">Fair</option>
+              <option value="poor">Poor</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label><input type="checkbox" id="itemVis" checked /> Visible</label>
+          </div>
+          <button type="submit" class="btn-primary">Add Item</button>
+        </form>
+        <p id="addMsg" style="margin-top: 10px;"></p>
+      </main>
+
+      <!-- EDIT -->
+      <main id="edit">
+        <h2 style="color: var(--primary-text); font-size: 0.9rem; margin: 10px 0; text-transform: uppercase;">Edit Items</h2>
+        <div id="editList"><p style="color: var(--light-text);">Loading...</p></div>
+      </main>
+    </div>
+  </div>
+
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+
+  <script>
+    let db = null;
+
+    function initFirebase() {
+      const config = {
+        apiKey: "AIzaSyBSCSW4pCsTtWJSsmh4n3gqpQkVZT9WVOU",
+        authDomain: "pawn-of-the-dead.firebaseapp.com",
+        projectId: "pawn-of-the-dead",
+        storageBucket: "pawn-of-the-dead.firebasestorage.app",
+        messagingSenderId: "247522640326",
+        appId: "1:247522640326:web:afdd7403d4294e21acf2c7"
+      };
+
+      try {
+        if (!firebase.apps || firebase.apps.length === 0) {
+          firebase.initializeApp(config);
+        }
+        db = firebase.firestore();
+        checkAuth();
+      } catch(e) {
+        console.error(e);
+      }
+    }
+
+    function checkAuth() {
+      const user = sessionStorage.getItem("potd_user");
+      if (!user) {
+        window.location.href = "index.html";
+        return;
+      }
+      loadInventory();
+    }
+
+    function doLogout() {
+      sessionStorage.clear();
+      window.location.href = "index.html";
+    }
+
+    function switchPage(page, btn) {
+      document.querySelectorAll("main").forEach(m => m.classList.remove("active"));
+      document.getElementById(page).classList.add("active");
+      document.querySelectorAll(".nav-btn").forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+
+      if (page === "inventory") loadInventory();
+      if (page === "edit") loadEditList();
+    }
+
+    async function loadInventory() {
+      try {
+        const snap = await db.collection("items").get();
+        const container = document.getElementById("inventoryList");
+        container.innerHTML = "";
+
+        if (snap.empty) {
+          container.innerHTML = "<p style='color: var(--light-text);'>No items</p>";
+          return;
+        }
+
+        snap.forEach(doc => {
+          const item = doc.data();
+          const vis = item.visible ? "✓" : "✗";
+          container.innerHTML += `
+            <div class="item-card">
+              <h3>${item.name}</h3>
+              <p>${item.description}</p>
+              <p><strong>$${item.price}</strong></p>
+              <p style="font-size: 0.75rem;">${vis} Visible</p>
+            </div>
+          `;
+        });
+      } catch(e) {
+        console.error(e);
+      }
+    }
+
+    async function addItem(e) {
+      e.preventDefault();
+      const msg = document.getElementById("addMsg");
+
+      try {
+        await db.collection("items").add({
+          name: document.getElementById("itemName").value,
+          description: document.getElementById("itemDesc").value,
+          category: document.getElementById("itemCat").value,
+          price: parseFloat(document.getElementById("itemPrice").value),
+          condition: document.getElementById("itemCond").value,
+          visible: document.getElementById("itemVis").checked,
+          createdAt: new Date().toISOString()
+        });
+        msg.innerHTML = "<p class='message success'>✓ Item added!</p>";
+        e.target.reset();
+        loadInventory();
+        setTimeout(() => msg.innerHTML = "", 3000);
+      } catch(e) {
+        msg.innerHTML = "<p class='message error'>✗ " + e.message + "</p>";
+      }
+    }
+
+    async function loadEditList() {
+      try {
+        const snap = await db.collection("items").get();
+        const container = document.getElementById("editList");
+        container.innerHTML = "";
+
+        snap.forEach(doc => {
+          const item = doc.data();
+          container.innerHTML += `
+            <div class="item-card">
+              <h3>${item.name}</h3>
+              <p>${item.description}</p>
+              <button class="btn-danger btn-small" onclick="deleteItem('${doc.id}')">Delete</button>
+            </div>
+          `;
+        });
+      } catch(e) {
+        console.error(e);
+      }
+    }
+
+    async function deleteItem(id) {
+      if (confirm("Delete this item?")) {
+        try {
+          await db.collection("items").doc(id).delete();
+          loadEditList();
+        } catch(e) {
+          alert(e.message);
+        }
+      }
+    }
+
+    window.addEventListener("load", initFirebase);
+  </script>
+</body>
+</html>
