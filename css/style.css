@@ -82,13 +82,30 @@ body::before {
 }
 
 /* ============================================================
+   LOGO & BRANDING
+   ============================================================ */
+
+.logo-section {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.logo {
+  font-size: 1.8rem;
+  filter: drop-shadow(0 0 6px rgba(139, 0, 0, 0.4));
+}
+
+/* ============================================================
    HEADER / NAVBAR
    ============================================================ */
 
 header {
   background: linear-gradient(180deg, #2a2a2a 0%, #1a1a1a 100%);
   border-bottom: 2px solid var(--accent-red);
-  padding: 12px;
+  padding: 10px 12px;
   text-align: center;
   flex-shrink: 0;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.7);
@@ -106,7 +123,7 @@ header::after {
 }
 
 header h1 {
-  font-size: 1.4rem;
+  font-size: 1.2rem;
   font-weight: 700;
   color: var(--primary-text);
   text-shadow: 2px 2px 6px rgba(0, 0, 0, 0.9);
@@ -115,19 +132,22 @@ header h1 {
 }
 
 header p {
-  font-size: 0.65rem;
+  font-size: 0.75rem;
   color: var(--light-text);
   margin-top: 3px;
   font-style: italic;
   letter-spacing: 0.5px;
 }
 
+.sort-controls {
+  margin-top: 8px;
+}
+
 nav {
   display: flex;
   gap: 0;
   padding: 0;
-  margin: 0;
-  margin-top: 8px;
+  margin: 8px 0 0 0;
 }
 
 nav button {
@@ -187,7 +207,7 @@ main.active {
 
 label {
   display: block;
-  font-size: 0.75rem;
+  font-size: 0.8rem;
   font-weight: 600;
   color: var(--primary-text);
   margin-bottom: 4px;
@@ -202,7 +222,7 @@ input, textarea, select {
   border: 1px solid var(--border-color);
   color: var(--light-text);
   font-family: 'Barlow', sans-serif;
-  font-size: 0.85rem;
+  font-size: 0.9rem;
   border-radius: 2px;
   transition: all 0.2s;
 }
@@ -241,7 +261,7 @@ button {
   border-radius: 2px;
   font-weight: 600;
   text-transform: uppercase;
-  font-size: 0.8rem;
+  font-size: 0.85rem;
   letter-spacing: 0.5px;
   transition: all 0.2s;
 }
@@ -305,81 +325,98 @@ button {
 .btn-small {
   width: auto;
   padding: 6px 12px;
-  font-size: 0.7rem;
+  font-size: 0.75rem;
   margin: 4px 4px 4px 0;
   display: inline-block;
 }
 
 /* ============================================================
-   CARDS & ITEM DISPLAY
+   ITEM CARDS - IMPROVED STYLING
    ============================================================ */
 
 .item-card {
   background: linear-gradient(135deg, #262626 0%, #1f1f1f 100%);
   border: 1px solid var(--border-color);
+  border-left: 3px solid var(--accent-red);
   border-radius: 2px;
-  padding: 10px;
-  margin-bottom: 10px;
+  padding: 12px;
+  margin-bottom: 12px;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.6);
-  transition: all 0.2s;
+  transition: all 0.3s;
 }
 
 .item-card:hover {
-  border-color: var(--accent-red);
-  box-shadow: 0 3px 10px rgba(139, 0, 0, 0.3);
+  border-left-color: var(--accent-orange);
+  box-shadow: 0 4px 12px rgba(139, 0, 0, 0.3);
+  transform: translateX(2px);
+}
+
+.item-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 10px;
+  margin-bottom: 8px;
 }
 
 .item-card h3 {
-  font-size: 0.95rem;
+  font-size: 1.05rem;
   color: var(--primary-text);
-  margin-bottom: 6px;
   text-transform: uppercase;
   letter-spacing: 0.5px;
+  margin: 0;
 }
 
 .item-card p {
-  font-size: 0.8rem;
+  font-size: 0.9rem;
   color: var(--light-text);
-  margin: 4px 0;
+  margin: 6px 0;
   line-height: 1.4;
 }
 
-.item-card .price {
-  font-size: 1.1rem;
+.item-category {
+  color: var(--accent-orange);
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.item-price {
+  font-size: 1.3rem;
   color: var(--accent-orange);
   font-weight: 700;
-  margin-top: 8px;
+  margin: 8px 0;
+  text-shadow: 0 0 4px rgba(204, 85, 0, 0.3);
 }
 
-.item-card .condition {
+.condition {
   display: inline-block;
-  padding: 3px 8px;
+  padding: 4px 10px;
   background: var(--accent-red);
   color: #fff;
-  font-size: 0.65rem;
+  font-size: 0.7rem;
   border-radius: 2px;
-  margin-top: 6px;
   font-weight: 600;
   letter-spacing: 0.3px;
+  text-transform: uppercase;
 }
 
-.item-card .condition.mint {
+.condition.mint {
   background: var(--success);
 }
 
-.item-card .condition.fair {
+.condition.fair {
   background: var(--warning);
 }
 
-.item-card .condition.good {
+.condition.good {
   background: #7a6a2a;
 }
 
-.item-card .condition.excellent {
+.condition.excellent {
   background: #2a5a4a;
 }
 
-.item-card .condition.poor {
+.condition.poor {
   background: #4a3a3a;
 }
 
@@ -398,14 +435,14 @@ button {
 }
 
 .stat-box .label {
-  font-size: 0.7rem;
+  font-size: 0.8rem;
   color: var(--light-text);
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
 
 .stat-box .value {
-  font-size: 1.6rem;
+  font-size: 1.8rem;
   color: var(--accent-orange);
   font-weight: 700;
   margin-top: 6px;
@@ -419,7 +456,7 @@ button {
 .message {
   padding: 10px;
   border-radius: 2px;
-  font-size: 0.85rem;
+  font-size: 0.9rem;
   margin-bottom: 10px;
   text-align: center;
   border: 1px solid;
@@ -460,9 +497,9 @@ button {
 }
 
 .brand-icon {
-  font-size: 3.5rem;
+  font-size: 4rem;
   margin-bottom: 10px;
-  filter: drop-shadow(0 0 4px rgba(139, 0, 0, 0.3));
+  filter: drop-shadow(0 0 8px rgba(139, 0, 0, 0.5));
 }
 
 .brand-title {
@@ -476,7 +513,7 @@ button {
 }
 
 .brand-sub {
-  font-size: 0.7rem;
+  font-size: 0.75rem;
   color: var(--light-text);
   letter-spacing: 0.5px;
   font-style: italic;
@@ -508,7 +545,7 @@ button {
 .corner.br { bottom: -1px; right: -1px; border-left: none; border-top: none; }
 
 .login-heading {
-  font-size: 1.1rem;
+  font-size: 1.2rem;
   color: var(--primary-text);
   margin-bottom: 15px;
   text-transform: uppercase;
@@ -523,7 +560,7 @@ button {
 
 .field-label {
   display: block;
-  font-size: 0.7rem;
+  font-size: 0.8rem;
   color: var(--light-text);
   margin-bottom: 4px;
   text-transform: uppercase;
@@ -537,7 +574,7 @@ button {
   border: 1px solid var(--border-color);
   color: var(--light-text);
   font-family: 'Barlow', sans-serif;
-  font-size: 0.85rem;
+  font-size: 0.9rem;
   border-radius: 2px;
 }
 
@@ -554,13 +591,13 @@ button {
 
 .login-error {
   color: #ff6b6b;
-  font-size: 0.8rem;
+  font-size: 0.85rem;
   margin-top: 10px;
   min-height: 1.2rem;
 }
 
 .login-footer {
-  font-size: 0.65rem;
+  font-size: 0.7rem;
   color: var(--light-text);
   margin-top: 15px;
   font-style: italic;

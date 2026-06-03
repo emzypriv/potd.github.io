@@ -11,72 +11,78 @@
   <div class="phone-container">
     <div class="phone-screen">
       <header>
-        <h1>PAWN OF THE DEAD</h1>
+        <div class="logo-section">
+          <div class="logo">☠️</div>
+          <h1>PAWN OF THE DEAD</h1>
+        </div>
         <p>Staff Dashboard</p>
         <nav>
           <button class="nav-btn active" onclick="switchPage('inventory', this)">Inventory</button>
           <button class="nav-btn" onclick="switchPage('add', this)">Add Item</button>
-          <button class="nav-btn" onclick="switchPage('edit', this)">Edit</button>
+          <button class="nav-btn" onclick="switchPage('settings', this)">Settings</button>
           <button class="nav-btn" onclick="doLogout()">Logout</button>
         </nav>
       </header>
 
       <!-- INVENTORY -->
       <main id="inventory" class="active">
-        <h2 style="color: var(--primary-text); font-size: 0.9rem; margin: 10px 0; text-transform: uppercase;">Current Stock</h2>
+        <h2 style="color: var(--primary-text); font-size: 1.1rem; margin: 12px 0; text-transform: uppercase;">Current Stock</h2>
         <div id="inventoryList"><p style="color: var(--light-text);">Loading...</p></div>
       </main>
 
       <!-- ADD ITEM -->
       <main id="add">
-        <h2 style="color: var(--primary-text); font-size: 0.9rem; margin: 10px 0; text-transform: uppercase;">Register Item</h2>
+        <h2 style="color: var(--primary-text); font-size: 1.1rem; margin: 12px 0; text-transform: uppercase;">Register Item</h2>
         <form onsubmit="addItem(event)">
           <div class="form-group">
             <label>Name</label>
             <input type="text" id="itemName" required />
           </div>
           <div class="form-group">
-            <label>Description</label>
-            <textarea id="itemDesc" required></textarea>
-          </div>
-          <div class="form-group">
             <label>Category</label>
             <select id="itemCat" required>
-              <option value="">Select</option>
-              <option value="weapons">Weapons</option>
-              <option value="jewelry">Jewelry</option>
-              <option value="electronics">Electronics</option>
-              <option value="furniture">Furniture</option>
-              <option value="antiques">Antiques</option>
-              <option value="cursed">Cursed</option>
+              <option value="">Select Category</option>
             </select>
           </div>
           <div class="form-group">
-            <label>Price</label>
+            <label>Price ($)</label>
             <input type="number" id="itemPrice" step="0.01" required />
           </div>
           <div class="form-group">
             <label>Condition</label>
             <select id="itemCond" required>
-              <option value="mint">Mint</option>
-              <option value="excellent">Excellent</option>
-              <option value="good">Good</option>
-              <option value="fair">Fair</option>
-              <option value="poor">Poor</option>
+              <option value="">Select Condition</option>
             </select>
           </div>
           <div class="form-group">
-            <label><input type="checkbox" id="itemVis" checked /> Visible</label>
+            <label><input type="checkbox" id="itemVis" checked /> Visible to Public</label>
           </div>
           <button type="submit" class="btn-primary">Add Item</button>
         </form>
-        <p id="addMsg" style="margin-top: 10px;"></p>
+        <p id="addMsg" style="margin-top: 10px; font-size: 0.9rem;"></p>
       </main>
 
-      <!-- EDIT -->
-      <main id="edit">
-        <h2 style="color: var(--primary-text); font-size: 0.9rem; margin: 10px 0; text-transform: uppercase;">Edit Items</h2>
-        <div id="editList"><p style="color: var(--light-text);">Loading...</p></div>
+      <!-- SETTINGS -->
+      <main id="settings">
+        <h2 style="color: var(--primary-text); font-size: 1.1rem; margin: 12px 0; text-transform: uppercase;">Manage Options</h2>
+        
+        <div style="margin-bottom: 20px;">
+          <h3 style="color: var(--primary-text); font-size: 0.95rem; margin: 10px 0 8px; text-transform: uppercase;">Categories</h3>
+          <div id="categoriesList"></div>
+          <div style="display: flex; gap: 5px; margin-top: 10px;">
+            <input type="text" id="newCategory" placeholder="New category" style="flex: 1; padding: 6px; background: #0f0f0f; border: 1px solid var(--border-color); color: var(--light-text); font-size: 0.85rem;"/>
+            <button type="button" onclick="addCategory()" class="btn-secondary btn-small">Add</button>
+          </div>
+        </div>
+
+        <div>
+          <h3 style="color: var(--primary-text); font-size: 0.95rem; margin: 10px 0 8px; text-transform: uppercase;">Conditions</h3>
+          <div id="conditionsList"></div>
+          <div style="display: flex; gap: 5px; margin-top: 10px;">
+            <input type="text" id="newCondition" placeholder="New condition" style="flex: 1; padding: 6px; background: #0f0f0f; border: 1px solid var(--border-color); color: var(--light-text); font-size: 0.85rem;"/>
+            <button type="button" onclick="addCondition()" class="btn-secondary btn-small">Add</button>
+          </div>
+        </div>
       </main>
     </div>
   </div>
@@ -86,6 +92,8 @@
 
   <script>
     let db = null;
+    let categories = [];
+    let conditions = [];
 
     function initFirebase() {
       const config = {
@@ -110,11 +118,105 @@
 
     function checkAuth() {
       const user = sessionStorage.getItem("potd_user");
-      if (!user) {
+      const role = sessionStorage.getItem("potd_role");
+      if (!user || role !== "manager") {
         window.location.href = "index.html";
         return;
       }
+      loadOptions();
       loadInventory();
+    }
+
+    async function loadOptions() {
+      try {
+        const doc = await db.collection("settings").doc("options").get();
+        if (doc.exists) {
+          const data = doc.data();
+          categories = data.categories || [];
+          conditions = data.conditions || [];
+        } else {
+          categories = ["weapons", "jewelry", "electronics", "furniture", "antiques", "cursed"];
+          conditions = ["mint", "excellent", "good", "fair", "poor"];
+        }
+        updateDropdowns();
+        renderOptions();
+      } catch(e) {
+        console.error(e);
+      }
+    }
+
+    function updateDropdowns() {
+      const catSelect = document.getElementById("itemCat");
+      const condSelect = document.getElementById("itemCond");
+      
+      catSelect.innerHTML = '<option value="">Select Category</option>';
+      categories.forEach(c => {
+        catSelect.innerHTML += `<option value="${c}">${c.toUpperCase()}</option>`;
+      });
+      
+      condSelect.innerHTML = '<option value="">Select Condition</option>';
+      conditions.forEach(c => {
+        condSelect.innerHTML += `<option value="${c}">${c.toUpperCase()}</option>`;
+      });
+    }
+
+    function renderOptions() {
+      const catDiv = document.getElementById("categoriesList");
+      const condDiv = document.getElementById("conditionsList");
+      
+      catDiv.innerHTML = categories.map(c => `
+        <div style="display: flex; justify-content: space-between; align-items: center; background: #1a1a1a; padding: 8px; margin: 4px 0; border: 1px solid var(--border-color);">
+          <span style="color: var(--light-text); font-size: 0.9rem;">${c}</span>
+          <button type="button" onclick="deleteCategory('${c}')" class="btn-danger btn-small" style="padding: 3px 8px; font-size: 0.7rem;">Delete</button>
+        </div>
+      `).join("");
+      
+      condDiv.innerHTML = conditions.map(c => `
+        <div style="display: flex; justify-content: space-between; align-items: center; background: #1a1a1a; padding: 8px; margin: 4px 0; border: 1px solid var(--border-color);">
+          <span style="color: var(--light-text); font-size: 0.9rem;">${c}</span>
+          <button type="button" onclick="deleteCondition('${c}')" class="btn-danger btn-small" style="padding: 3px 8px; font-size: 0.7rem;">Delete</button>
+        </div>
+      `).join("");
+    }
+
+    async function addCategory() {
+      const input = document.getElementById("newCategory");
+      const cat = input.value.trim().toLowerCase();
+      if (!cat || categories.includes(cat)) return;
+      
+      categories.push(cat);
+      await saveOptions();
+      input.value = "";
+    }
+
+    async function deleteCategory(cat) {
+      categories = categories.filter(c => c !== cat);
+      await saveOptions();
+    }
+
+    async function addCondition() {
+      const input = document.getElementById("newCondition");
+      const cond = input.value.trim().toLowerCase();
+      if (!cond || conditions.includes(cond)) return;
+      
+      conditions.push(cond);
+      await saveOptions();
+      input.value = "";
+    }
+
+    async function deleteCondition(cond) {
+      conditions = conditions.filter(c => c !== cond);
+      await saveOptions();
+    }
+
+    async function saveOptions() {
+      try {
+        await db.collection("settings").doc("options").set({ categories, conditions });
+        updateDropdowns();
+        renderOptions();
+      } catch(e) {
+        alert("Error saving options: " + e.message);
+      }
     }
 
     function doLogout() {
@@ -129,7 +231,6 @@
       btn.classList.add("active");
 
       if (page === "inventory") loadInventory();
-      if (page === "edit") loadEditList();
     }
 
     async function loadInventory() {
@@ -148,10 +249,14 @@
           const vis = item.visible ? "✓" : "✗";
           container.innerHTML += `
             <div class="item-card">
-              <h3>${item.name}</h3>
-              <p>${item.description}</p>
-              <p><strong>$${item.price}</strong></p>
-              <p style="font-size: 0.75rem;">${vis} Visible</p>
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                  <h3 style="font-size: 1rem;">${item.name}</h3>
+                  <p style="font-size: 0.9rem; color: var(--light-text);"><strong>$${(item.price || 0).toFixed(2)}</strong></p>
+                  <p style="font-size: 0.85rem; color: var(--light-text);">Category: ${item.category} | Condition: ${item.condition}</p>
+                </div>
+                <button class="btn-danger btn-small" onclick="deleteItem('${doc.id}')" style="font-size: 0.8rem;">Delete</button>
+              </div>
             </div>
           `;
         });
@@ -167,14 +272,13 @@
       try {
         await db.collection("items").add({
           name: document.getElementById("itemName").value,
-          description: document.getElementById("itemDesc").value,
           category: document.getElementById("itemCat").value,
           price: parseFloat(document.getElementById("itemPrice").value),
           condition: document.getElementById("itemCond").value,
           visible: document.getElementById("itemVis").checked,
           createdAt: new Date().toISOString()
         });
-        msg.innerHTML = "<p class='message success'>✓ Item added!</p>";
+        msg.innerHTML = "<p class='message success'>✓ Item added successfully!</p>";
         e.target.reset();
         loadInventory();
         setTimeout(() => msg.innerHTML = "", 3000);
@@ -183,32 +287,11 @@
       }
     }
 
-    async function loadEditList() {
-      try {
-        const snap = await db.collection("items").get();
-        const container = document.getElementById("editList");
-        container.innerHTML = "";
-
-        snap.forEach(doc => {
-          const item = doc.data();
-          container.innerHTML += `
-            <div class="item-card">
-              <h3>${item.name}</h3>
-              <p>${item.description}</p>
-              <button class="btn-danger btn-small" onclick="deleteItem('${doc.id}')">Delete</button>
-            </div>
-          `;
-        });
-      } catch(e) {
-        console.error(e);
-      }
-    }
-
     async function deleteItem(id) {
       if (confirm("Delete this item?")) {
         try {
           await db.collection("items").doc(id).delete();
-          loadEditList();
+          loadInventory();
         } catch(e) {
           alert(e.message);
         }

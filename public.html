@@ -11,18 +11,24 @@
   <div class="phone-container">
     <div class="phone-screen">
       <header>
-        <h1>PAWN OF THE DEAD</h1>
+        <div class="logo-section">
+          <div class="logo">☠️</div>
+          <h1>PAWN OF THE DEAD</h1>
+        </div>
         <p>Browse Our Cursed Inventory</p>
+        
+        <div class="sort-controls">
+          <select id="sortBy" onchange="applySort()" style="width: 100%; padding: 6px; background: #1a1a1a; color: var(--primary-text); border: 1px solid var(--border-color); font-size: 0.75rem;">
+            <option value="name">Sort by Name</option>
+            <option value="price-low">Price: Low to High</option>
+            <option value="price-high">Price: High to Low</option>
+            <option value="category">Sort by Category</option>
+            <option value="condition">Sort by Condition</option>
+          </select>
+        </div>
       </header>
 
       <main class="active">
-        <div class="stat-box">
-          <div class="label">Welcome to the Crypt</div>
-          <div class="value">☠️</div>
-        </div>
-
-        <h2 style="color: var(--primary-text); font-size: 0.9rem; margin: 15px 0 10px; text-transform: uppercase;">Featured Items</h2>
-
         <div id="itemsContainer">
           <p style="color: var(--light-text); text-align: center; padding: 20px;">Loading inventory...</p>
         </div>
@@ -35,6 +41,7 @@
 
   <script>
     let db = null;
+    let allItems = [];
 
     function initFirebase() {
       const config = {
@@ -61,30 +68,60 @@
     async function loadItems() {
       try {
         const snap = await db.collection("items").where("visible", "==", true).get();
-        const container = document.getElementById("itemsContainer");
-        container.innerHTML = "";
-
-        if (snap.empty) {
-          container.innerHTML = "<p style='color: var(--light-text); text-align: center;'>No items available</p>";
-          return;
-        }
-
+        allItems = [];
+        
         snap.forEach(doc => {
-          const item = doc.data();
-          container.innerHTML += `
-            <div class="item-card">
-              <h3>${item.name}</h3>
-              <p>${item.description}</p>
-              <p><strong>Category:</strong> ${item.category}</p>
-              <div class="price">$${item.price}</div>
-              <span class="condition ${item.condition}">${item.condition.toUpperCase()}</span>
-            </div>
-          `;
+          allItems.push({ id: doc.id, ...doc.data() });
         });
+        
+        applySort();
       } catch(e) {
         console.error(e);
         document.getElementById("itemsContainer").innerHTML = "<p style='color: red;'>" + e.message + "</p>";
       }
+    }
+
+    function applySort() {
+      const sortBy = document.getElementById("sortBy").value;
+      let sorted = [...allItems];
+
+      if (sortBy === "price-low") {
+        sorted.sort((a, b) => (a.price || 0) - (b.price || 0));
+      } else if (sortBy === "price-high") {
+        sorted.sort((a, b) => (b.price || 0) - (a.price || 0));
+      } else if (sortBy === "category") {
+        sorted.sort((a, b) => (a.category || "").localeCompare(b.category || ""));
+      } else if (sortBy === "condition") {
+        const condOrder = { mint: 1, excellent: 2, good: 3, fair: 4, poor: 5 };
+        sorted.sort((a, b) => (condOrder[a.condition] || 99) - (condOrder[b.condition] || 99));
+      } else {
+        sorted.sort((a, b) => (a.name || "").localeCompare(b.name || ""));
+      }
+
+      renderItems(sorted);
+    }
+
+    function renderItems(items) {
+      const container = document.getElementById("itemsContainer");
+      container.innerHTML = "";
+
+      if (items.length === 0) {
+        container.innerHTML = "<p style='color: var(--light-text); text-align: center; padding: 20px;'>Inventory depleted...</p>";
+        return;
+      }
+
+      items.forEach(item => {
+        container.innerHTML += `
+          <div class="item-card">
+            <div class="item-header">
+              <h3>${item.name}</h3>
+              <span class="condition ${item.condition}">${(item.condition || "UNKNOWN").toUpperCase()}</span>
+            </div>
+            <p class="item-category"><strong>${item.category ? item.category.toUpperCase() : "N/A"}</strong></p>
+            <div class="item-price">$${(item.price || 0).toFixed(2)}</div>
+          </div>
+        `;
+      });
     }
 
     window.addEventListener("load", initFirebase);
