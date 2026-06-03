@@ -69,8 +69,8 @@ Each item document:
 4. Go to repo **Settings** → **Pages**
 5. Under **Source**, select: `main` branch → `/ (root)` → **Save**
 6. Your sites will be live at:
-   - **Public Storefront:** `https://yourname.github.io/pawn-of-the-dead/pages/public.html`
-   - **Staff Dashboard:** `https://yourname.github.io/pawn-of-the-dead/`
+   - **Public Storefront:** `https://emzypriv.github.io/pawn-of-the-dead/pages/public.html`
+   - **Staff Dashboard:** `https://emzypriv.github.io/pawn-of-the-dead/`
 
 ---
 
