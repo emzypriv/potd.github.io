@@ -14,27 +14,25 @@
         <h1>PAWN OF THE DEAD</h1>
         <p>Staff Dashboard</p>
         <nav>
-          <button class="nav-btn active" data-page="inventory" onclick="switchPage('inventory', this)">Inventory</button>
-          <button class="nav-btn" data-page="add" onclick="switchPage('add', this)">Add Item</button>
-          <button class="nav-btn" data-page="edit" onclick="switchPage('edit', this)">Edit</button>
-          <button class="nav-btn" data-page="logout" onclick="doLogout()">Logout</button>
+          <button class="nav-btn active" onclick="switchPage('inventory', this)">Inventory</button>
+          <button class="nav-btn" onclick="switchPage('add', this)">Add Item</button>
+          <button class="nav-btn" onclick="switchPage('edit', this)">Edit</button>
+          <button class="nav-btn" onclick="doLogout()">Logout</button>
         </nav>
       </header>
 
-      <!-- INVENTORY PAGE -->
+      <!-- INVENTORY -->
       <main id="inventory" class="active">
         <h2 style="color: var(--primary-text); font-size: 0.9rem; margin: 10px 0; text-transform: uppercase;">Current Stock</h2>
-        <div id="inventoryList">
-          <p style="color: var(--light-text); text-align: center;">Loading inventory...</p>
-        </div>
+        <div id="inventoryList"><p style="color: var(--light-text);">Loading...</p></div>
       </main>
 
-      <!-- ADD ITEM PAGE -->
+      <!-- ADD ITEM -->
       <main id="add">
-        <h2 style="color: var(--primary-text); font-size: 0.9rem; margin: 10px 0; text-transform: uppercase;">Register New Item</h2>
+        <h2 style="color: var(--primary-text); font-size: 0.9rem; margin: 10px 0; text-transform: uppercase;">Register Item</h2>
         <form onsubmit="addItem(event)">
           <div class="form-group">
-            <label>Item Name</label>
+            <label>Name</label>
             <input type="text" id="itemName" required />
           </div>
           <div class="form-group">
@@ -43,23 +41,23 @@
           </div>
           <div class="form-group">
             <label>Category</label>
-            <select id="itemCategory" required>
-              <option value="">Select Category</option>
+            <select id="itemCat" required>
+              <option value="">Select</option>
               <option value="weapons">Weapons</option>
               <option value="jewelry">Jewelry</option>
               <option value="electronics">Electronics</option>
               <option value="furniture">Furniture</option>
               <option value="antiques">Antiques</option>
-              <option value="cursed">Cursed Items</option>
+              <option value="cursed">Cursed</option>
             </select>
           </div>
           <div class="form-group">
-            <label>Price ($)</label>
+            <label>Price</label>
             <input type="number" id="itemPrice" step="0.01" required />
           </div>
           <div class="form-group">
             <label>Condition</label>
-            <select id="itemCondition" required>
+            <select id="itemCond" required>
               <option value="mint">Mint</option>
               <option value="excellent">Excellent</option>
               <option value="good">Good</option>
@@ -68,52 +66,45 @@
             </select>
           </div>
           <div class="form-group">
-            <label>
-              <input type="checkbox" id="itemVisible" checked /> Visible to Public
-            </label>
+            <label><input type="checkbox" id="itemVis" checked /> Visible</label>
           </div>
-          <button type="submit" class="btn-primary">Register Item</button>
+          <button type="submit" class="btn-primary">Add Item</button>
         </form>
-        <p id="addMessage" style="margin-top: 10px;"></p>
+        <p id="addMsg" style="margin-top: 10px;"></p>
       </main>
 
-      <!-- EDIT PAGE -->
+      <!-- EDIT -->
       <main id="edit">
-        <h2 style="color: var(--primary-text); font-size: 0.9rem; margin: 10px 0; text-transform: uppercase;">Edit Item</h2>
-        <div id="editList">
-          <p style="color: var(--light-text); text-align: center;">Loading items...</p>
-        </div>
+        <h2 style="color: var(--primary-text); font-size: 0.9rem; margin: 10px 0; text-transform: uppercase;">Edit Items</h2>
+        <div id="editList"><p style="color: var(--light-text);">Loading...</p></div>
       </main>
     </div>
   </div>
 
-  <!-- Firebase -->
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
   <script>
-    // DECLARE GLOBALLY FIRST
     let db = null;
-    let firebaseReady = false;
-
-    const FIREBASE_CONFIG = {
-      apiKey: "AIzaSyBSCSW4pCsTtWJSsmh4n3gqpQkVZT9WVOU",
-      authDomain: "pawn-of-the-dead.firebaseapp.com",
-      projectId: "pawn-of-the-dead",
-      storageBucket: "pawn-of-the-dead.firebasestorage.app",
-      messagingSenderId: "247522640326",
-      appId: "1:247522640326:web:afdd7403d4294e21acf2c7"
-    };
 
     function initFirebase() {
+      const config = {
+        apiKey: "AIzaSyBSCSW4pCsTtWJSsmh4n3gqpQkVZT9WVOU",
+        authDomain: "pawn-of-the-dead.firebaseapp.com",
+        projectId: "pawn-of-the-dead",
+        storageBucket: "pawn-of-the-dead.firebasestorage.app",
+        messagingSenderId: "247522640326",
+        appId: "1:247522640326:web:afdd7403d4294e21acf2c7"
+      };
+
       try {
-        firebase.initializeApp(FIREBASE_CONFIG);
+        if (!firebase.apps || firebase.apps.length === 0) {
+          firebase.initializeApp(config);
+        }
         db = firebase.firestore();
-        firebaseReady = true;
         checkAuth();
       } catch(e) {
-        console.error("Firebase error:", e);
-        alert("Firebase config error");
+        console.error(e);
       }
     }
 
@@ -142,115 +133,89 @@
     }
 
     async function loadInventory() {
-      if (!firebaseReady || !db) return;
-
       try {
-        const snapshot = await db.collection("items").get();
+        const snap = await db.collection("items").get();
         const container = document.getElementById("inventoryList");
         container.innerHTML = "";
 
-        if (snapshot.empty) {
-          container.innerHTML = "<p style='color: var(--light-text); text-align: center;'>No items in inventory.</p>";
+        if (snap.empty) {
+          container.innerHTML = "<p style='color: var(--light-text);'>No items</p>";
           return;
         }
 
-        snapshot.forEach(doc => {
+        snap.forEach(doc => {
           const item = doc.data();
-          const visibility = item.visible ? "✓ Visible" : "✗ Hidden";
-          const html = `
+          const vis = item.visible ? "✓" : "✗";
+          container.innerHTML += `
             <div class="item-card">
-              <h3>${item.name || 'Unknown'}</h3>
-              <p>${item.description || 'No description'}</p>
-              <p><strong>Price:</strong> $${item.price || '0.00'}</p>
-              <p><strong>Condition:</strong> ${item.condition || 'N/A'}</p>
-              <p style="font-size: 0.75rem; color: var(--light-text);">${visibility}</p>
+              <h3>${item.name}</h3>
+              <p>${item.description}</p>
+              <p><strong>$${item.price}</strong></p>
+              <p style="font-size: 0.75rem;">${vis} Visible</p>
             </div>
           `;
-          container.innerHTML += html;
         });
       } catch(e) {
-        console.error("Error:", e);
-      }
-    }
-
-    async function addItem(e) {
-      if (!firebaseReady || !db) return;
-
-      e.preventDefault();
-      const msgDiv = document.getElementById("addMessage");
-      msgDiv.innerHTML = "";
-
-      try {
-        const newItem = {
-          name: document.getElementById("itemName").value,
-          description: document.getElementById("itemDesc").value,
-          category: document.getElementById("itemCategory").value,
-          price: parseFloat(document.getElementById("itemPrice").value),
-          condition: document.getElementById("itemCondition").value,
-          visible: document.getElementById("itemVisible").checked,
-          createdAt: new Date().toISOString()
-        };
-
-        await db.collection("items").add(newItem);
-        msgDiv.innerHTML = "<p class='message success'>✓ Item registered successfully!</p>";
-        e.target.reset();
-        loadInventory();
-        setTimeout(() => msgDiv.innerHTML = "", 3000);
-      } catch(e) {
-        msgDiv.innerHTML = "<p class='message error'>✗ Error: " + e.message + "</p>";
         console.error(e);
       }
     }
 
-    async function loadEditList() {
-      if (!firebaseReady || !db) return;
+    async function addItem(e) {
+      e.preventDefault();
+      const msg = document.getElementById("addMsg");
 
       try {
-        const snapshot = await db.collection("items").get();
+        await db.collection("items").add({
+          name: document.getElementById("itemName").value,
+          description: document.getElementById("itemDesc").value,
+          category: document.getElementById("itemCat").value,
+          price: parseFloat(document.getElementById("itemPrice").value),
+          condition: document.getElementById("itemCond").value,
+          visible: document.getElementById("itemVis").checked,
+          createdAt: new Date().toISOString()
+        });
+        msg.innerHTML = "<p class='message success'>✓ Item added!</p>";
+        e.target.reset();
+        loadInventory();
+        setTimeout(() => msg.innerHTML = "", 3000);
+      } catch(e) {
+        msg.innerHTML = "<p class='message error'>✗ " + e.message + "</p>";
+      }
+    }
+
+    async function loadEditList() {
+      try {
+        const snap = await db.collection("items").get();
         const container = document.getElementById("editList");
         container.innerHTML = "";
 
-        if (snapshot.empty) {
-          container.innerHTML = "<p style='color: var(--light-text); text-align: center;'>No items to edit.</p>";
-          return;
-        }
-
-        snapshot.forEach(doc => {
+        snap.forEach(doc => {
           const item = doc.data();
-          const html = `
+          container.innerHTML += `
             <div class="item-card">
-              <h3>${item.name || 'Unknown'}</h3>
-              <p>${item.description || 'No description'}</p>
-              <p><strong>Price:</strong> $${item.price || '0.00'}</p>
-              <button class="btn-edit btn-small" onclick="editItem('${doc.id}')">Edit</button>
+              <h3>${item.name}</h3>
+              <p>${item.description}</p>
               <button class="btn-danger btn-small" onclick="deleteItem('${doc.id}')">Delete</button>
             </div>
           `;
-          container.innerHTML += html;
         });
       } catch(e) {
-        console.error("Error:", e);
+        console.error(e);
       }
     }
 
-    async function deleteItem(docId) {
-      if (!firebaseReady || !db) return;
-
+    async function deleteItem(id) {
       if (confirm("Delete this item?")) {
         try {
-          await db.collection("items").doc(docId).delete();
+          await db.collection("items").doc(id).delete();
           loadEditList();
         } catch(e) {
-          alert("Error: " + e.message);
+          alert(e.message);
         }
       }
     }
 
-    function editItem(docId) {
-      alert("Edit functionality - customize as needed. Item ID: " + docId);
-    }
-
-    initFirebase();
+    window.addEventListener("load", initFirebase);
   </script>
 </body>
 </html>

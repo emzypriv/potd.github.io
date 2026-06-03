@@ -35,7 +35,7 @@
             <input type="password" id="loginPass" class="field-input" placeholder="••••••••"/>
           </div>
 
-          <button class="btn-primary" onclick="doLogin()">ENTER THE CRYPT</button>
+          <button class="btn-primary" onclick="handleLogin()">ENTER THE CRYPT</button>
 
           <p id="loginError" class="login-error"></p>
           <p id="debugLine" style="font-family:monospace;font-size:0.6rem;color:#666;text-align:center;margin-top:0.5rem;word-break:break-all;min-height:1rem;"></p>
@@ -46,95 +46,87 @@
     </div>
   </div>
 
-  <!-- Firebase compat SDKs -->
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
   <script>
-    // DECLARE DB VARIABLE GLOBALLY FIRST
+    // Wait for Firebase to load
     let db = null;
-    let firebaseReady = false;
+    let fbReady = false;
 
-    // FIREBASE CONFIG
-    const FIREBASE_CONFIG = {
-      apiKey: "AIzaSyBSCSW4pCsTtWJSsmh4n3gqpQkVZT9WVOU",
-      authDomain: "pawn-of-the-dead.firebaseapp.com",
-      projectId: "pawn-of-the-dead",
-      storageBucket: "pawn-of-the-dead.firebasestorage.app",
-      messagingSenderId: "247522640326",
-      appId: "1:247522640326:web:afdd7403d4294e21acf2c7"
-    };
-
-    // INITIALIZE FIREBASE
     function initFirebase() {
+      const config = {
+        apiKey: "AIzaSyBSCSW4pCsTtWJSsmh4n3gqpQkVZT9WVOU",
+        authDomain: "pawn-of-the-dead.firebaseapp.com",
+        projectId: "pawn-of-the-dead",
+        storageBucket: "pawn-of-the-dead.firebasestorage.app",
+        messagingSenderId: "247522640326",
+        appId: "1:247522640326:web:afdd7403d4294e21acf2c7"
+      };
+
       try {
-        firebase.initializeApp(FIREBASE_CONFIG);
+        if (!firebase.apps || firebase.apps.length === 0) {
+          firebase.initializeApp(config);
+        }
         db = firebase.firestore();
-        firebaseReady = true;
-        debug("✓ Firebase initialized");
+        fbReady = true;
+        debug("✓ Firebase ready");
       } catch(e) {
-        console.error("Firebase init error:", e);
-        document.getElementById("loginError").textContent = "⚠ Firebase config incomplete";
         debug("Firebase error: " + e.message);
-      }
-    }
-
-    function debug(msg) {
-      const line = document.getElementById("debugLine");
-      if (line) line.textContent = msg;
-    }
-
-    async function doLogin() {
-      if (!firebaseReady || !db) {
-        document.getElementById("loginError").textContent = "⚠ System initializing. Please wait...";
-        return;
-      }
-
-      const handle = document.getElementById("loginName").value.trim().toLowerCase();
-      const pass   = document.getElementById("loginPass").value;
-      const err    = document.getElementById("loginError");
-      err.textContent = "";
-      debug("Attempting login for: " + handle);
-
-      if (!handle || !pass) {
-        err.textContent = "⚠ Fill in all fields";
-        return;
-      }
-
-      try {
-        debug("Connecting to Crypt...");
-        const userDoc = await db.collection("staff").doc(handle).get();
-        debug("Response received");
-
-        if (!userDoc.exists) {
-          err.textContent = "⚠ Unknown operative";
-          return;
-        }
-
-        const data = userDoc.data();
-        if (data.pin !== pass) {
-          err.textContent = "⚠ Wrong code";
-          return;
-        }
-
-        debug("Access granted");
-        sessionStorage.setItem("potd_user", handle);
-        sessionStorage.setItem("potd_role", data.role);
-        sessionStorage.setItem("potd_display", data.displayName || handle);
-
-        window.location.href = "pages/staff-dashboard.html";
-
-      } catch(e) {
-        err.textContent = "⚠ Error: " + e.message;
-        debug("ERROR: " + e.message);
         console.error(e);
       }
     }
 
-    // Initialize on load
-    document.addEventListener("keydown", e => { if (e.key === "Enter") doLogin(); });
-    initFirebase();
-    debug("System online");
+    function debug(msg) {
+      const el = document.getElementById("debugLine");
+      if (el) el.textContent = msg;
+    }
+
+    async function handleLogin() {
+      if (!fbReady || !db) {
+        alert("Firebase not ready. Please refresh.");
+        return;
+      }
+
+      const user = document.getElementById("loginName").value.trim().toLowerCase();
+      const pass = document.getElementById("loginPass").value;
+      const errEl = document.getElementById("loginError");
+
+      if (!user || !pass) {
+        errEl.textContent = "⚠ Fill in all fields";
+        return;
+      }
+
+      try {
+        debug("Checking credentials...");
+        const doc = await db.collection("staff").doc(user).get();
+
+        if (!doc.exists) {
+          errEl.textContent = "⚠ Unknown operative";
+          return;
+        }
+
+        const data = doc.data();
+        if (data.pin !== pass) {
+          errEl.textContent = "⚠ Wrong code";
+          return;
+        }
+
+        debug("Access granted");
+        sessionStorage.setItem("potd_user", user);
+        sessionStorage.setItem("potd_role", data.role || "staff");
+        sessionStorage.setItem("potd_display", data.displayName || user);
+
+        window.location.href = "pages/staff-dashboard.html";
+      } catch(e) {
+        errEl.textContent = "⚠ " + e.message;
+        console.error(e);
+      }
+    }
+
+    // Initialize when page loads
+    window.addEventListener("load", initFirebase);
+    document.addEventListener("keydown", e => { if (e.key === "Enter") handleLogin(); });
   </script>
 </body>
 </html>

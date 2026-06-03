@@ -30,72 +30,64 @@
     </div>
   </div>
 
-  <!-- Firebase compat SDKs -->
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
   <script>
-    // DECLARE GLOBALLY FIRST
     let db = null;
-    let firebaseReady = false;
-
-    const FIREBASE_CONFIG = {
-      apiKey: "AIzaSyBSCSW4pCsTtWJSsmh4n3gqpQkVZT9WVOU",
-      authDomain: "pawn-of-the-dead.firebaseapp.com",
-      projectId: "pawn-of-the-dead",
-      storageBucket: "pawn-of-the-dead.firebasestorage.app",
-      messagingSenderId: "247522640326",
-      appId: "1:247522640326:web:afdd7403d4294e21acf2c7"
-    };
 
     function initFirebase() {
+      const config = {
+        apiKey: "AIzaSyBSCSW4pCsTtWJSsmh4n3gqpQkVZT9WVOU",
+        authDomain: "pawn-of-the-dead.firebaseapp.com",
+        projectId: "pawn-of-the-dead",
+        storageBucket: "pawn-of-the-dead.firebasestorage.app",
+        messagingSenderId: "247522640326",
+        appId: "1:247522640326:web:afdd7403d4294e21acf2c7"
+      };
+
       try {
-        firebase.initializeApp(FIREBASE_CONFIG);
+        if (!firebase.apps || firebase.apps.length === 0) {
+          firebase.initializeApp(config);
+        }
         db = firebase.firestore();
-        firebaseReady = true;
-        loadInventory();
+        loadItems();
       } catch(e) {
-        console.error("Firebase error:", e);
-        document.getElementById("itemsContainer").innerHTML = "<p style='color: red;'>Firebase config error</p>";
+        console.error(e);
+        document.getElementById("itemsContainer").innerHTML = "<p style='color: red;'>Firebase error: " + e.message + "</p>";
       }
     }
 
-    async function loadInventory() {
-      if (!firebaseReady || !db) {
-        document.getElementById("itemsContainer").innerHTML = "<p style='color: red;'>System initializing...</p>";
-        return;
-      }
-
+    async function loadItems() {
       try {
-        const snapshot = await db.collection("items").where("visible", "==", true).get();
+        const snap = await db.collection("items").where("visible", "==", true).get();
         const container = document.getElementById("itemsContainer");
         container.innerHTML = "";
 
-        if (snapshot.empty) {
-          container.innerHTML = "<p style='color: var(--light-text); text-align: center;'>Inventory depleted...</p>";
+        if (snap.empty) {
+          container.innerHTML = "<p style='color: var(--light-text); text-align: center;'>No items available</p>";
           return;
         }
 
-        snapshot.forEach(doc => {
+        snap.forEach(doc => {
           const item = doc.data();
-          const html = `
+          container.innerHTML += `
             <div class="item-card">
-              <h3>${item.name || 'Unknown Item'}</h3>
-              <p>${item.description || 'No description'}</p>
-              <p><strong>Category:</strong> ${item.category || 'N/A'}</p>
-              <div class="price">$${item.price || '0.00'}</div>
-              <span class="condition ${item.condition || 'poor'}">${(item.condition || 'poor').toUpperCase()}</span>
+              <h3>${item.name}</h3>
+              <p>${item.description}</p>
+              <p><strong>Category:</strong> ${item.category}</p>
+              <div class="price">$${item.price}</div>
+              <span class="condition ${item.condition}">${item.condition.toUpperCase()}</span>
             </div>
           `;
-          container.innerHTML += html;
         });
       } catch(e) {
-        console.error("Error:", e);
-        document.getElementById("itemsContainer").innerHTML = "<p style='color: red;'>Error: " + e.message + "</p>";
+        console.error(e);
+        document.getElementById("itemsContainer").innerHTML = "<p style='color: red;'>" + e.message + "</p>";
       }
     }
 
-    initFirebase();
+    window.addEventListener("load", initFirebase);
   </script>
 </body>
 </html>
