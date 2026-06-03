@@ -8,9 +8,6 @@
   <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Barlow:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
 </head>
 <body>
-  <div class="scanlines"></div>
-  <div class="noise"></div>
-
   <div class="phone-container">
     <div class="phone-screen">
       <header>
@@ -24,11 +21,10 @@
           <div class="value">☠️</div>
         </div>
 
-        <h2 style="color: var(--accent-orange); font-size: 0.9rem; margin: 15px 0 10px; text-transform: uppercase;">Featured Items</h2>
+        <h2 style="color: var(--primary-text); font-size: 0.9rem; margin: 15px 0 10px; text-transform: uppercase;">Featured Items</h2>
 
         <div id="itemsContainer">
-          <!-- Items will be loaded here from Firebase -->
-          <p style="color: var(--primary-text); text-align: center; padding: 20px;">Loading inventory...</p>
+          <p style="color: var(--light-text); text-align: center; padding: 20px;">Loading inventory...</p>
         </div>
       </main>
     </div>
@@ -39,6 +35,10 @@
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
   <script>
+    // DECLARE GLOBALLY FIRST
+    let db = null;
+    let firebaseReady = false;
+
     const FIREBASE_CONFIG = {
       apiKey: "AIzaSyBSCSW4pCsTtWJSsmh4n3gqpQkVZT9WVOU",
       authDomain: "pawn-of-the-dead.firebaseapp.com",
@@ -48,17 +48,31 @@
       appId: "1:247522640326:web:afdd7403d4294e21acf2c7"
     };
 
-    firebase.initializeApp(FIREBASE_CONFIG);
-    const db = firebase.firestore();
+    function initFirebase() {
+      try {
+        firebase.initializeApp(FIREBASE_CONFIG);
+        db = firebase.firestore();
+        firebaseReady = true;
+        loadInventory();
+      } catch(e) {
+        console.error("Firebase error:", e);
+        document.getElementById("itemsContainer").innerHTML = "<p style='color: red;'>Firebase config error</p>";
+      }
+    }
 
     async function loadInventory() {
+      if (!firebaseReady || !db) {
+        document.getElementById("itemsContainer").innerHTML = "<p style='color: red;'>System initializing...</p>";
+        return;
+      }
+
       try {
         const snapshot = await db.collection("items").where("visible", "==", true).get();
         const container = document.getElementById("itemsContainer");
         container.innerHTML = "";
 
         if (snapshot.empty) {
-          container.innerHTML = "<p style='color: var(--primary-text); text-align: center;'>Inventory depleted...</p>";
+          container.innerHTML = "<p style='color: var(--light-text); text-align: center;'>Inventory depleted...</p>";
           return;
         }
 
@@ -66,21 +80,22 @@
           const item = doc.data();
           const html = `
             <div class="item-card">
-              <h3>${item.name}</h3>
-              <p>${item.description}</p>
-              <p><strong>Category:</strong> ${item.category}</p>
-              <div class="price">$${item.price}</div>
-              <span class="condition ${item.condition}">${item.condition.toUpperCase()}</span>
+              <h3>${item.name || 'Unknown Item'}</h3>
+              <p>${item.description || 'No description'}</p>
+              <p><strong>Category:</strong> ${item.category || 'N/A'}</p>
+              <div class="price">$${item.price || '0.00'}</div>
+              <span class="condition ${item.condition || 'poor'}">${(item.condition || 'poor').toUpperCase()}</span>
             </div>
           `;
           container.innerHTML += html;
         });
       } catch(e) {
-        console.error("Error loading inventory:", e);
+        console.error("Error:", e);
+        document.getElementById("itemsContainer").innerHTML = "<p style='color: red;'>Error: " + e.message + "</p>";
       }
     }
 
-    loadInventory();
+    initFirebase();
   </script>
 </body>
 </html>

@@ -8,9 +8,6 @@
   <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Barlow:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
 </head>
 <body>
-  <div class="scanlines"></div>
-  <div class="noise"></div>
-
   <div class="phone-container">
     <div class="phone-screen">
       <header>
@@ -26,15 +23,15 @@
 
       <!-- INVENTORY PAGE -->
       <main id="inventory" class="active">
-        <h2 style="color: var(--accent-orange); font-size: 0.9rem; margin: 10px 0; text-transform: uppercase;">Current Stock</h2>
+        <h2 style="color: var(--primary-text); font-size: 0.9rem; margin: 10px 0; text-transform: uppercase;">Current Stock</h2>
         <div id="inventoryList">
-          <p style="color: var(--primary-text); text-align: center;">Loading inventory...</p>
+          <p style="color: var(--light-text); text-align: center;">Loading inventory...</p>
         </div>
       </main>
 
       <!-- ADD ITEM PAGE -->
       <main id="add">
-        <h2 style="color: var(--accent-orange); font-size: 0.9rem; margin: 10px 0; text-transform: uppercase;">Register New Item</h2>
+        <h2 style="color: var(--primary-text); font-size: 0.9rem; margin: 10px 0; text-transform: uppercase;">Register New Item</h2>
         <form onsubmit="addItem(event)">
           <div class="form-group">
             <label>Item Name</label>
@@ -82,9 +79,9 @@
 
       <!-- EDIT PAGE -->
       <main id="edit">
-        <h2 style="color: var(--accent-orange); font-size: 0.9rem; margin: 10px 0; text-transform: uppercase;">Edit Item</h2>
+        <h2 style="color: var(--primary-text); font-size: 0.9rem; margin: 10px 0; text-transform: uppercase;">Edit Item</h2>
         <div id="editList">
-          <p style="color: var(--primary-text); text-align: center;">Loading items...</p>
+          <p style="color: var(--light-text); text-align: center;">Loading items...</p>
         </div>
       </main>
     </div>
@@ -95,6 +92,10 @@
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
   <script>
+    // DECLARE GLOBALLY FIRST
+    let db = null;
+    let firebaseReady = false;
+
     const FIREBASE_CONFIG = {
       apiKey: "AIzaSyBSCSW4pCsTtWJSsmh4n3gqpQkVZT9WVOU",
       authDomain: "pawn-of-the-dead.firebaseapp.com",
@@ -104,14 +105,25 @@
       appId: "1:247522640326:web:afdd7403d4294e21acf2c7"
     };
 
-    firebase.initializeApp(FIREBASE_CONFIG);
-    const db = firebase.firestore();
+    function initFirebase() {
+      try {
+        firebase.initializeApp(FIREBASE_CONFIG);
+        db = firebase.firestore();
+        firebaseReady = true;
+        checkAuth();
+      } catch(e) {
+        console.error("Firebase error:", e);
+        alert("Firebase config error");
+      }
+    }
 
     function checkAuth() {
       const user = sessionStorage.getItem("potd_user");
       if (!user) {
         window.location.href = "../index.html";
+        return;
       }
+      loadInventory();
     }
 
     function doLogout() {
@@ -130,13 +142,15 @@
     }
 
     async function loadInventory() {
+      if (!firebaseReady || !db) return;
+
       try {
         const snapshot = await db.collection("items").get();
         const container = document.getElementById("inventoryList");
         container.innerHTML = "";
 
         if (snapshot.empty) {
-          container.innerHTML = "<p style='color: var(--primary-text); text-align: center;'>No items in inventory.</p>";
+          container.innerHTML = "<p style='color: var(--light-text); text-align: center;'>No items in inventory.</p>";
           return;
         }
 
@@ -145,11 +159,11 @@
           const visibility = item.visible ? "✓ Visible" : "✗ Hidden";
           const html = `
             <div class="item-card">
-              <h3>${item.name}</h3>
-              <p>${item.description}</p>
-              <p><strong>Price:</strong> $${item.price}</p>
-              <p><strong>Condition:</strong> ${item.condition}</p>
-              <p style="font-size: 0.75rem; color: var(--primary-text);">${visibility}</p>
+              <h3>${item.name || 'Unknown'}</h3>
+              <p>${item.description || 'No description'}</p>
+              <p><strong>Price:</strong> $${item.price || '0.00'}</p>
+              <p><strong>Condition:</strong> ${item.condition || 'N/A'}</p>
+              <p style="font-size: 0.75rem; color: var(--light-text);">${visibility}</p>
             </div>
           `;
           container.innerHTML += html;
@@ -160,6 +174,8 @@
     }
 
     async function addItem(e) {
+      if (!firebaseReady || !db) return;
+
       e.preventDefault();
       const msgDiv = document.getElementById("addMessage");
       msgDiv.innerHTML = "";
@@ -178,20 +194,24 @@
         await db.collection("items").add(newItem);
         msgDiv.innerHTML = "<p class='message success'>✓ Item registered successfully!</p>";
         e.target.reset();
+        loadInventory();
         setTimeout(() => msgDiv.innerHTML = "", 3000);
       } catch(e) {
         msgDiv.innerHTML = "<p class='message error'>✗ Error: " + e.message + "</p>";
+        console.error(e);
       }
     }
 
     async function loadEditList() {
+      if (!firebaseReady || !db) return;
+
       try {
         const snapshot = await db.collection("items").get();
         const container = document.getElementById("editList");
         container.innerHTML = "";
 
         if (snapshot.empty) {
-          container.innerHTML = "<p style='color: var(--primary-text); text-align: center;'>No items to edit.</p>";
+          container.innerHTML = "<p style='color: var(--light-text); text-align: center;'>No items to edit.</p>";
           return;
         }
 
@@ -199,9 +219,9 @@
           const item = doc.data();
           const html = `
             <div class="item-card">
-              <h3>${item.name}</h3>
-              <p>${item.description}</p>
-              <p><strong>Price:</strong> $${item.price}</p>
+              <h3>${item.name || 'Unknown'}</h3>
+              <p>${item.description || 'No description'}</p>
+              <p><strong>Price:</strong> $${item.price || '0.00'}</p>
               <button class="btn-edit btn-small" onclick="editItem('${doc.id}')">Edit</button>
               <button class="btn-danger btn-small" onclick="deleteItem('${doc.id}')">Delete</button>
             </div>
@@ -214,6 +234,8 @@
     }
 
     async function deleteItem(docId) {
+      if (!firebaseReady || !db) return;
+
       if (confirm("Delete this item?")) {
         try {
           await db.collection("items").doc(docId).delete();
@@ -228,8 +250,7 @@
       alert("Edit functionality - customize as needed. Item ID: " + docId);
     }
 
-    checkAuth();
-    loadInventory();
+    initFirebase();
   </script>
 </body>
 </html>

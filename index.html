@@ -8,52 +8,55 @@
   <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Barlow:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
 </head>
 <body class="login-page">
-  <div class="scanlines"></div>
-  <div class="noise"></div>
+  <div class="phone-container">
+    <div class="phone-screen">
+      <div class="login-wrap">
+        <div class="login-brand">
+          <div class="brand-icon">☠️</div>
+          <h1 class="brand-title">PAWN OF THE DEAD</h1>
+          <p class="brand-sub">UNDEAD MERCHANDISE • CURSED ANTIQUITIES</p>
+        </div>
 
-  <div class="login-wrap">
-    <div class="login-brand">
-      <div class="brand-icon">☠️</div>
-      <h1 class="brand-title">PAWN OF THE DEAD</h1>
-      <p class="brand-sub">UNDEAD MERCHANDISE • CURSED ANTIQUITIES</p>
-    </div>
+        <div class="login-box">
+          <div class="corner tl"></div>
+          <div class="corner tr"></div>
+          <div class="corner bl"></div>
+          <div class="corner br"></div>
 
-    <div class="login-box">
-      <div class="corner tl"></div>
-      <div class="corner tr"></div>
-      <div class="corner bl"></div>
-      <div class="corner br"></div>
+          <h2 class="login-heading">STAFF ACCESS</h2>
 
-      <h2 class="login-heading">STAFF ACCESS</h2>
+          <div class="field-group">
+            <label class="field-label">USERNAME</label>
+            <input type="text" id="loginName" class="field-input" placeholder="enter your name" autocomplete="off"/>
+          </div>
 
-      <div class="field-group">
-        <label class="field-label">USERNAME</label>
-        <input type="text" id="loginName" class="field-input" placeholder="enter your name" autocomplete="off"/>
+          <div class="field-group">
+            <label class="field-label">PASSWORD</label>
+            <input type="password" id="loginPass" class="field-input" placeholder="••••••••"/>
+          </div>
+
+          <button class="btn-primary" onclick="doLogin()">ENTER THE CRYPT</button>
+
+          <p id="loginError" class="login-error"></p>
+          <p id="debugLine" style="font-family:monospace;font-size:0.6rem;color:#666;text-align:center;margin-top:0.5rem;word-break:break-all;min-height:1rem;"></p>
+        </div>
+
+        <p class="login-footer">PAWN OF THE DEAD © — We buy the dead, we sell the damned.</p>
       </div>
-
-      <div class="field-group">
-        <label class="field-label">PASSWORD</label>
-        <input type="password" id="loginPass" class="field-input" placeholder="••••••••"/>
-      </div>
-
-      <button class="btn-primary" onclick="doLogin()">ENTER THE CRYPT</button>
-
-      <p id="loginError" class="login-error"></p>
-      <p id="debugLine" style="font-family:monospace;font-size:0.6rem;color:#555;text-align:center;margin-top:0.5rem;word-break:break-all;min-height:1rem;"></p>
     </div>
-
-    <p class="login-footer">PAWN OF THE DEAD &copy; — We buy the dead, we sell the damned.</p>
   </div>
 
-  <!-- Firebase compat SDKs (no ES module imports needed) -->
+  <!-- Firebase compat SDKs -->
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
   <script>
-    // ============================================================
-    // FIREBASE CONFIG - UPDATE WITH YOUR PROJECT DETAILS
-    // ============================================================
-  const firebaseConfig = {
+    // DECLARE DB VARIABLE GLOBALLY FIRST
+    let db = null;
+    let firebaseReady = false;
+
+    // FIREBASE CONFIG
+    const FIREBASE_CONFIG = {
       apiKey: "AIzaSyBSCSW4pCsTtWJSsmh4n3gqpQkVZT9WVOU",
       authDomain: "pawn-of-the-dead.firebaseapp.com",
       projectId: "pawn-of-the-dead",
@@ -61,16 +64,32 @@
       messagingSenderId: "247522640326",
       appId: "1:247522640326:web:afdd7403d4294e21acf2c7"
     };
-    // ============================================================
 
-    firebase.initializeApp(FIREBASE_CONFIG);
-    const db = firebase.firestore();
+    // INITIALIZE FIREBASE
+    function initFirebase() {
+      try {
+        firebase.initializeApp(FIREBASE_CONFIG);
+        db = firebase.firestore();
+        firebaseReady = true;
+        debug("✓ Firebase initialized");
+      } catch(e) {
+        console.error("Firebase init error:", e);
+        document.getElementById("loginError").textContent = "⚠ Firebase config incomplete";
+        debug("Firebase error: " + e.message);
+      }
+    }
 
     function debug(msg) {
-      document.getElementById("debugLine").textContent = msg;
+      const line = document.getElementById("debugLine");
+      if (line) line.textContent = msg;
     }
 
     async function doLogin() {
+      if (!firebaseReady || !db) {
+        document.getElementById("loginError").textContent = "⚠ System initializing. Please wait...";
+        return;
+      }
+
       const handle = document.getElementById("loginName").value.trim().toLowerCase();
       const pass   = document.getElementById("loginPass").value;
       const err    = document.getElementById("loginError");
@@ -78,46 +97,44 @@
       debug("Attempting login for: " + handle);
 
       if (!handle || !pass) {
-        err.textContent = "⚠ Fill in all fields, staff member.";
+        err.textContent = "⚠ Fill in all fields";
         return;
       }
 
       try {
         debug("Connecting to Crypt...");
         const userDoc = await db.collection("staff").doc(handle).get();
-        debug("Response received. Found: " + userDoc.exists);
+        debug("Response received");
 
         if (!userDoc.exists) {
-          err.textContent = "⚠ Unknown operative.";
-          debug("No user doc found for: " + handle);
+          err.textContent = "⚠ Unknown operative";
           return;
         }
 
         const data = userDoc.data();
-        debug("User found. Checking PIN...");
-
         if (data.pin !== pass) {
-          err.textContent = "⚠ Wrong code.";
-          debug("PIN mismatch.");
+          err.textContent = "⚠ Wrong code";
           return;
         }
 
-        debug("Access granted. Loading...");
-        sessionStorage.setItem("potd_user",    handle);
-        sessionStorage.setItem("potd_role",    data.role);
+        debug("Access granted");
+        sessionStorage.setItem("potd_user", handle);
+        sessionStorage.setItem("potd_role", data.role);
         sessionStorage.setItem("potd_display", data.displayName || handle);
 
         window.location.href = "pages/staff-dashboard.html";
 
       } catch(e) {
-        err.textContent = "⚠ System error.";
+        err.textContent = "⚠ Error: " + e.message;
         debug("ERROR: " + e.message);
         console.error(e);
       }
     }
 
+    // Initialize on load
     document.addEventListener("keydown", e => { if (e.key === "Enter") doLogin(); });
-    debug("System online. Awaiting identification.");
+    initFirebase();
+    debug("System online");
   </script>
 </body>
 </html>
