@@ -5,6 +5,40 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>PAWN OF THE DEAD — Browse</title>
   <link rel="stylesheet" href="css/style.css"/>
+  <style>
+    /* ── Tab strip ── */
+    .pub-tabs {
+      display: flex;
+      border-bottom: 2px solid var(--accent-red);
+      flex-shrink: 0;
+    }
+    .pub-tab {
+      flex: 1;
+      padding: 9px 4px;
+      background: transparent;
+      border: none;
+      border-bottom: 3px solid transparent;
+      margin-bottom: -2px;
+      color: var(--muted-text);
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 0.85rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .pub-tab:hover { color: var(--light-text); }
+    .pub-tab.active {
+      color: var(--primary-text);
+      border-bottom-color: var(--primary-text);
+      background: rgba(212,175,55,0.06);
+    }
+
+    /* ── Filter bars — hide inactive tab's controls ── */
+    .tab-controls { display: none; }
+    .tab-controls.active { display: block; }
+  </style>
 </head>
 <body>
   <div class="phone-container">
@@ -15,29 +49,65 @@
           <div class="logo">☠️</div>
           <h1>PAWN OF THE DEAD</h1>
         </div>
-        <p>Browse Our Cursed Inventory</p>
+        <p id="headerSub">For Sale — Cursed Inventory</p>
 
-        <div class="sort-controls">
-          <div class="search-bar" style="margin-bottom:6px;">
-            <input type="text" id="searchInput" placeholder="Search items..." oninput="applyFilters()"/>
+        <!-- FOR SALE filters -->
+        <div class="tab-controls active" id="ctrl-sale">
+          <div class="sort-controls">
+            <div class="search-bar" style="margin-bottom:6px;">
+              <input type="text" id="saleSearch" placeholder="Search items…" oninput="applyFilters()"/>
+            </div>
+            <div class="filter-row">
+              <select id="saleCat" onchange="applyFilters()">
+                <option value="">All Categories</option>
+              </select>
+              <select id="saleSort" onchange="applyFilters()">
+                <option value="name">Name A–Z</option>
+                <option value="price-low">Price ↑</option>
+                <option value="price-high">Price ↓</option>
+                <option value="condition">Condition</option>
+              </select>
+            </div>
           </div>
-          <div class="filter-row">
-            <select id="filterCat" onchange="applyFilters()">
-              <option value="">All Categories</option>
-            </select>
-            <select id="sortBy" onchange="applyFilters()">
-              <option value="name">Name A–Z</option>
-              <option value="price-low">Price ↑</option>
-              <option value="price-high">Price ↓</option>
-              <option value="condition">Condition</option>
-            </select>
+        </div>
+
+        <!-- WE BUY filters -->
+        <div class="tab-controls" id="ctrl-buy">
+          <div class="sort-controls">
+            <div class="search-bar" style="margin-bottom:6px;">
+              <input type="text" id="buySearch" placeholder="Search price list…" oninput="applyBuyFilter()"/>
+            </div>
+            <div class="filter-row">
+              <select id="buyCat" onchange="applyBuyFilter()">
+                <option value="">All Categories</option>
+              </select>
+            </div>
           </div>
+        </div>
+
+        <!-- Tab strip -->
+        <div class="pub-tabs">
+          <button class="pub-tab active" id="tab-sale" onclick="switchTab('sale')">🏷 For Sale</button>
+          <button class="pub-tab"        id="tab-buy"  onclick="switchTab('buy')">💰 We Buy</button>
         </div>
       </header>
 
-      <main class="active">
+      <!-- FOR SALE -->
+      <main id="page-sale" class="active">
         <div id="itemsContainer">
-          <div class="empty-state"><span class="empty-icon">💀</span>Loading inventory...</div>
+          <div class="empty-state"><span class="empty-icon">💀</span>Loading inventory…</div>
+        </div>
+      </main>
+
+      <!-- WE BUY (price list) -->
+      <main id="page-buy">
+        <!-- Legend -->
+        <div style="display:flex;gap:12px;margin-bottom:10px;padding:6px 10px;background:var(--card-bg);border:1px solid var(--border-color);border-radius:var(--radius);font-size:0.7rem;align-items:center;">
+          <span style="color:var(--success-text);">▲ We Pay</span>
+          <span style="color:var(--muted-text);margin-left:auto;font-style:italic;">Prices based on condition</span>
+        </div>
+        <div id="priceListContainer">
+          <div class="empty-state"><span class="empty-icon">💀</span>Loading prices…</div>
         </div>
       </main>
 
@@ -57,9 +127,13 @@
       appId:             "1:247522640326:web:afdd7403d4294e21acf2c7"
     };
 
-    let db = null;
-    let allItems = [];
+    let db         = null;
+    let allItems   = [];
+    let allPrices  = [];
+    let activeTab  = "sale";
+    let priceLoaded = false;
 
+    // ── Init ────────────────────────────────────────────────
     function initFirebase() {
       try {
         if (!firebase.apps || firebase.apps.length === 0) firebase.initializeApp(FB_CONFIG);
@@ -72,6 +146,33 @@
       }
     }
 
+    // ── Tab switching ────────────────────────────────────────
+    function switchTab(tab) {
+      activeTab = tab;
+
+      // Toggle pages
+      document.querySelectorAll("main").forEach(m => m.classList.remove("active"));
+      document.getElementById("page-" + tab).classList.add("active");
+
+      // Toggle tab buttons
+      document.querySelectorAll(".pub-tab").forEach(b => b.classList.remove("active"));
+      document.getElementById("tab-" + tab).classList.add("active");
+
+      // Toggle filter bars
+      document.querySelectorAll(".tab-controls").forEach(c => c.classList.remove("active"));
+      document.getElementById("ctrl-" + tab).classList.add("active");
+
+      // Update subtitle
+      const subs = { sale: "For Sale — Cursed Inventory", buy: "What We Purchase" };
+      document.getElementById("headerSub").textContent = subs[tab];
+
+      // Lazy-load price list on first visit
+      if (tab === "buy" && !priceLoaded) loadPriceList();
+    }
+
+    // ════════════════════════════════════════════════════════
+    //  FOR SALE TAB
+    // ════════════════════════════════════════════════════════
     async function loadItems() {
       try {
         const snap = await db.collection("items").where("visible", "==", true).get();
@@ -84,11 +185,11 @@
           if (d.category) cats.add(d.category);
         });
 
-        // Populate category filter
-        const catSel = document.getElementById("filterCat");
+        const catSel = document.getElementById("saleCat");
         [...cats].sort().forEach(c => {
           const o = document.createElement("option");
-          o.value = c; o.textContent = c.charAt(0).toUpperCase() + c.slice(1);
+          o.value = c;
+          o.textContent = cap(c);
           catSel.appendChild(o);
         });
 
@@ -100,23 +201,23 @@
     }
 
     function applyFilters() {
-      const q      = (document.getElementById("searchInput").value || "").toLowerCase();
-      const cat    = document.getElementById("filterCat").value;
-      const sortBy = document.getElementById("sortBy").value;
+      const q    = (document.getElementById("saleSearch").value || "").toLowerCase();
+      const cat  = document.getElementById("saleCat").value;
+      const sort = document.getElementById("saleSort").value;
 
-      let filtered = allItems.filter(item => {
-        const matchQ   = !q || (item.name || "").toLowerCase().includes(q) || (item.category || "").toLowerCase().includes(q);
-        const matchCat = !cat || item.category === cat;
-        return matchQ && matchCat;
+      let list = allItems.filter(i => {
+        const mq = !q   || (i.name||"").toLowerCase().includes(q) || (i.category||"").toLowerCase().includes(q);
+        const mc = !cat || i.category === cat;
+        return mq && mc;
       });
 
-      const condOrder = { mint:1, excellent:2, good:3, fair:4, poor:5 };
-      if      (sortBy === "price-low")  filtered.sort((a,b) => (a.price||0) - (b.price||0));
-      else if (sortBy === "price-high") filtered.sort((a,b) => (b.price||0) - (a.price||0));
-      else if (sortBy === "condition")  filtered.sort((a,b) => (condOrder[a.condition]||99) - (condOrder[b.condition]||99));
-      else                              filtered.sort((a,b) => (a.name||"").localeCompare(b.name||""));
+      const co = { mint:1, excellent:2, good:3, fair:4, poor:5 };
+      if      (sort === "price-low")  list.sort((a,b) => (a.price||0)-(b.price||0));
+      else if (sort === "price-high") list.sort((a,b) => (b.price||0)-(a.price||0));
+      else if (sort === "condition")  list.sort((a,b) => (co[a.condition]||99)-(co[b.condition]||99));
+      else                            list.sort((a,b) => (a.name||"").localeCompare(b.name||""));
 
-      renderItems(filtered);
+      renderItems(list);
     }
 
     function renderItems(items) {
@@ -131,18 +232,102 @@
         <div class="item-card">
           <div class="item-header">
             <h3>${escHtml(item.name)}</h3>
-            <span class="condition ${item.condition || ''}">${(item.condition || 'UNKNOWN').toUpperCase()}</span>
+            <span class="condition ${item.condition||''}">${(item.condition||'UNKNOWN').toUpperCase()}</span>
           </div>
           <div class="item-meta">
-            <span class="item-category">${item.category ? item.category.toUpperCase() : 'N/A'}</span>
+            <span class="item-category">${item.category ? cap(item.category) : 'N/A'}</span>
           </div>
-          <div class="item-price">$${(item.price || 0).toFixed(2)}</div>
+          <div class="item-price">$${(item.price||0).toFixed(2)}</div>
         </div>
       `).join("");
     }
 
+    // ════════════════════════════════════════════════════════
+    //  WE BUY TAB
+    // ════════════════════════════════════════════════════════
+    async function loadPriceList() {
+      try {
+        const snap = await db.collection("pricelist").get();
+        allPrices = [];
+        const cats = new Set();
+
+        snap.forEach(doc => {
+          const d = { id: doc.id, ...doc.data() };
+          allPrices.push(d);
+          if (d.category) cats.add(d.category);
+        });
+
+        const catSel = document.getElementById("buyCat");
+        [...cats].sort().forEach(c => {
+          const o = document.createElement("option");
+          o.value = c;
+          o.textContent = cap(c);
+          catSel.appendChild(o);
+        });
+
+        priceLoaded = true;
+        applyBuyFilter();
+      } catch (e) {
+        document.getElementById("priceListContainer").innerHTML =
+          `<div class="message error">${e.message}</div>`;
+      }
+    }
+
+    function applyBuyFilter() {
+      const q   = (document.getElementById("buySearch").value || "").toLowerCase();
+      const cat = document.getElementById("buyCat").value;
+
+      let list = allPrices.filter(e => {
+        const mq = !q   || (e.name||"").toLowerCase().includes(q) || (e.category||"").toLowerCase().includes(q);
+        const mc = !cat || e.category === cat;
+        return mq && mc;
+      });
+
+      list.sort((a,b) => (a.name||"").localeCompare(b.name||""));
+      renderPriceList(list);
+    }
+
+    function renderPriceList(entries) {
+      const container = document.getElementById("priceListContainer");
+
+      if (!entries.length) {
+        container.innerHTML = `<div class="empty-state"><span class="empty-icon">☠️</span>Nothing found.</div>`;
+        return;
+      }
+
+      // Group by category
+      const groups = {};
+      entries.forEach(e => {
+        const k = e.category || "Uncategorised";
+        if (!groups[k]) groups[k] = [];
+        groups[k].push(e);
+      });
+
+      container.innerHTML = Object.keys(groups).sort().map(cat => `
+        <div class="category-group">
+          <div class="category-label">${cap(cat)}</div>
+          ${groups[cat].map(e => `
+            <div class="pricelist-card">
+              <div class="pricelist-info">
+                <h3>${escHtml(e.name)}</h3>
+                ${e.notes ? `<p>${escHtml(e.notes)}</p>` : ''}
+              </div>
+              <div class="pricelist-prices">
+                <span class="price-label">WE PAY</span>
+                <span class="buy">$${(e.buyPrice||0).toFixed(2)}</span>
+              </div>
+            </div>
+          `).join("")}
+        </div>
+      `).join("");
+    }
+
+    // ── Utils ───────────────────────────────────────────────
     function escHtml(str) {
-      return String(str).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+      return String(str||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+    }
+    function cap(str) {
+      return String(str||"").charAt(0).toUpperCase() + String(str||"").slice(1);
     }
 
     window.addEventListener("load", initFirebase);
