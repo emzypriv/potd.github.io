@@ -51,17 +51,6 @@
         <div class="search-bar">
           <input type="text" id="invSearch" placeholder="Search items…" oninput="filterInventory()"/>
         </div>
-        <div class="filter-row">
-          <select id="invCatFilter" onchange="filterInventory()">
-            <option value="">All Categories</option>
-          </select>
-          <select id="invSort" onchange="filterInventory()">
-            <option value="name">Name A–Z</option>
-            <option value="price-low">Price ↑</option>
-            <option value="price-high">Price ↓</option>
-            <option value="condition">Condition</option>
-          </select>
-        </div>
 
         <div id="inventoryList">
           <div class="empty-state"><span class="empty-icon">💀</span>Loading…</div>
@@ -78,15 +67,9 @@
           <label>Item Name</label>
           <input type="text" id="itemName" placeholder="e.g. Cursed Pocket Watch"/>
         </div>
-        <div class="form-row">
-          <div class="form-group">
-            <label>Category</label>
-            <select id="itemCat"><option value="">Select…</option></select>
-          </div>
-          <div class="form-group">
-            <label>Condition</label>
-            <select id="itemCond"><option value="">Select…</option></select>
-          </div>
+        <div class="form-group">
+          <label>Category</label>
+          <select id="itemCat"><option value="">Select…</option></select>
         </div>
         <div class="form-group">
           <label>Price ($)</label>
@@ -206,14 +189,6 @@
           </div>
         </div>
 
-        <div>
-          <p style="font-size:0.8rem;font-weight:700;color:var(--primary-text);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">Conditions</p>
-          <div id="conditionsList"></div>
-          <div class="add-option-row">
-            <input type="text" id="newCondition" placeholder="New condition"/>
-            <button class="btn-secondary btn-small" onclick="addCondition()">Add</button>
-          </div>
-        </div>
       </main>
 
     </div><!-- phone-screen -->
@@ -237,7 +212,6 @@
 
   let db = null;
   let categories = [];
-  let conditions  = [];
   let allInventory   = [];
   let allPriceList   = [];
   let allStaff       = [];
@@ -252,7 +226,7 @@
       if (!firebase.apps || firebase.apps.length === 0) firebase.initializeApp(FB_CONFIG);
       db = firebase.firestore();
       // FiveM CEF fix — force long polling, avoid websocket / window refs
-      db.settings({ experimentalForceLongPolling: true, merge: true });
+      db.settings({ experimentalAutoDetectLongPolling: true, merge: true });
       checkAuth();
     } catch (e) {
       console.error("Firebase init:", e);
@@ -305,10 +279,8 @@
       if (doc.exists) {
         const d = doc.data();
         categories = d.categories || [];
-        conditions  = d.conditions  || [];
       } else {
         categories = ["weapons","jewelry","electronics","furniture","antiques","cursed"];
-        conditions  = ["mint","excellent","good","fair","poor"];
       }
       updateDropdowns();
       renderOptions();
@@ -322,22 +294,6 @@
       sel.innerHTML = '<option value="">Select…</option>';
       categories.forEach(c => sel.innerHTML += `<option value="${c}">${cap(c)}</option>`);
     });
-
-    const condSel = document.getElementById("itemCond");
-    if (condSel) {
-      condSel.innerHTML = '<option value="">Select…</option>';
-      conditions.forEach(c => condSel.innerHTML += `<option value="${c}">${cap(c)}</option>`);
-    }
-
-    // Inventory filter dropdowns
-    ["invCatFilter"].forEach(id => {
-      const sel = document.getElementById(id);
-      if (!sel) return;
-      const cur = sel.value;
-      sel.innerHTML = '<option value="">All Categories</option>';
-      categories.forEach(c => sel.innerHTML += `<option value="${c}">${cap(c)}</option>`);
-      sel.value = cur;
-    });
   }
 
   function renderOptions() {
@@ -345,12 +301,6 @@
       <div class="option-item">
         <span>${c}</span>
         <button class="btn-icon delete" onclick="deleteCategory('${c}')">✕</button>
-      </div>`).join("") || `<div class="empty-state" style="padding:10px;">None added.</div>`;
-
-    document.getElementById("conditionsList").innerHTML = conditions.map(c => `
-      <div class="option-item">
-        <span>${c}</span>
-        <button class="btn-icon delete" onclick="deleteCondition('${c}')">✕</button>
       </div>`).join("") || `<div class="empty-state" style="padding:10px;">None added.</div>`;
   }
 
@@ -368,23 +318,9 @@
     await saveOptions();
   }
 
-  async function addCondition() {
-    const input = document.getElementById("newCondition");
-    const val   = input.value.trim().toLowerCase();
-    if (!val || conditions.includes(val)) return;
-    conditions.push(val);
-    await saveOptions();
-    input.value = "";
-  }
-
-  async function deleteCondition(cond) {
-    conditions = conditions.filter(c => c !== cond);
-    await saveOptions();
-  }
-
   async function saveOptions() {
     try {
-      await db.collection("settings").doc("options").set({ categories, conditions });
+      await db.collection("settings").doc("options").set({ categories });
       updateDropdowns();
       renderOptions();
     } catch (e) { alert("Error saving options: " + e.message); }
@@ -416,22 +352,13 @@
   }
 
   function filterInventory() {
-    const q    = (document.getElementById("invSearch").value || "").toLowerCase();
-    const cat  = document.getElementById("invCatFilter").value;
-    const sort = document.getElementById("invSort").value;
+    const q = (document.getElementById("invSearch").value || "").toLowerCase();
 
-    let list = allInventory.filter(i => {
-      const mq  = !q   || (i.name||"").toLowerCase().includes(q) || (i.category||"").toLowerCase().includes(q);
-      const mc  = !cat || i.category === cat;
-      return mq && mc;
-    });
+    let list = allInventory.filter(i =>
+      !q || (i.name||"").toLowerCase().includes(q) || (i.category||"").toLowerCase().includes(q)
+    );
 
-    const co = { mint:1,excellent:2,good:3,fair:4,poor:5 };
-    if      (sort === "price-low")  list.sort((a,b) => (a.price||0)-(b.price||0));
-    else if (sort === "price-high") list.sort((a,b) => (b.price||0)-(a.price||0));
-    else if (sort === "condition")  list.sort((a,b) => (co[a.condition]||99)-(co[b.condition]||99));
-    else                            list.sort((a,b) => (a.name||"").localeCompare(b.name||""));
-
+    list.sort((a,b) => (a.name||"").localeCompare(b.name||""));
     renderInventory(list);
   }
 
@@ -447,9 +374,6 @@
       <div class="item-card" id="card-${item.id}">
         <div class="item-header">
           <h3>${escHtml(item.name)}</h3>
-          <div style="display:flex;gap:4px;align-items:center;flex-shrink:0;">
-            <span class="condition ${item.condition||''}">${(item.condition||'?').toUpperCase()}</span>
-          </div>
         </div>
         <div class="item-meta">
           <span class="item-category">${item.category ? cap(item.category) : 'N/A'}</span>
@@ -463,15 +387,9 @@
             <label>Name</label>
             <input type="text" id="eName-${item.id}" value="${escHtml(item.name)}"/>
           </div>
-          <div class="form-row">
-            <div class="form-group">
-              <label>Category</label>
-              <select id="eCat-${item.id}">${catOptions(item.category)}</select>
-            </div>
-            <div class="form-group">
-              <label>Condition</label>
-              <select id="eCond-${item.id}">${condOptions(item.condition)}</select>
-            </div>
+          <div class="form-group">
+            <label>Category</label>
+            <select id="eCat-${item.id}">${catOptions(item.category)}</select>
           </div>
           <div class="form-row">
             <div class="form-group">
@@ -505,12 +423,6 @@
     ).join("");
   }
 
-  function condOptions(selected) {
-    return conditions.map(c =>
-      `<option value="${c}" ${c===selected?'selected':''}>${cap(c)}</option>`
-    ).join("");
-  }
-
   function toggleEdit(id) {
     const form = document.getElementById(`edit-${id}`);
     form.classList.toggle("open");
@@ -523,16 +435,15 @@
   async function saveEdit(id) {
     const name  = document.getElementById(`eName-${id}`).value.trim();
     const cat   = document.getElementById(`eCat-${id}`).value;
-    const cond  = document.getElementById(`eCond-${id}`).value;
     const price = parseFloat(document.getElementById(`ePrice-${id}`).value);
     const vis   = document.getElementById(`eVis-${id}`).checked;
 
-    if (!name || !cat || !cond || isNaN(price)) {
+    if (!name || !cat || isNaN(price)) {
       alert("Please fill in all fields."); return;
     }
 
     try {
-      await db.collection("items").doc(id).update({ name, category: cat, condition: cond, price, visible: vis });
+      await db.collection("items").doc(id).update({ name, category: cat, price, visible: vis });
       cancelEdit(id);
       loadInventory();
     } catch (e) { alert("Save error: " + e.message); }
@@ -542,22 +453,20 @@
     const msg   = document.getElementById("addMsg");
     const name  = document.getElementById("itemName").value.trim();
     const cat   = document.getElementById("itemCat").value;
-    const cond  = document.getElementById("itemCond").value;
     const price = parseFloat(document.getElementById("itemPrice").value);
     const vis   = document.getElementById("itemVis").checked;
 
-    if (!name || !cat || !cond || isNaN(price)) {
+    if (!name || !cat || isNaN(price)) {
       msg.innerHTML = `<div class="message error">⚠ Please fill in all fields.</div>`;
       return;
     }
 
     try {
-      await db.collection("items").add({ name, category: cat, condition: cond, price, visible: vis, createdAt: new Date().toISOString() });
+      await db.collection("items").add({ name, category: cat, price, visible: vis, createdAt: new Date().toISOString() });
       msg.innerHTML = `<div class="message success">✓ Item added successfully.</div>`;
       document.getElementById("itemName").value  = "";
       document.getElementById("itemPrice").value = "";
       document.getElementById("itemCat").value   = "";
-      document.getElementById("itemCond").value  = "";
       document.getElementById("itemVis").checked = true;
       setTimeout(() => msg.innerHTML = "", 3000);
     } catch (e) {

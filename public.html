@@ -54,19 +54,8 @@
         <!-- FOR SALE filters -->
         <div class="tab-controls active" id="ctrl-sale">
           <div class="sort-controls">
-            <div class="search-bar" style="margin-bottom:6px;">
+            <div class="search-bar">
               <input type="text" id="saleSearch" placeholder="Search items…" oninput="applyFilters()"/>
-            </div>
-            <div class="filter-row">
-              <select id="saleCat" onchange="applyFilters()">
-                <option value="">All Categories</option>
-              </select>
-              <select id="saleSort" onchange="applyFilters()">
-                <option value="name">Name A–Z</option>
-                <option value="price-low">Price ↑</option>
-                <option value="price-high">Price ↓</option>
-                <option value="condition">Condition</option>
-              </select>
             </div>
           </div>
         </div>
@@ -74,13 +63,8 @@
         <!-- WE BUY filters -->
         <div class="tab-controls" id="ctrl-buy">
           <div class="sort-controls">
-            <div class="search-bar" style="margin-bottom:6px;">
+            <div class="search-bar">
               <input type="text" id="buySearch" placeholder="Search price list…" oninput="applyBuyFilter()"/>
-            </div>
-            <div class="filter-row">
-              <select id="buyCat" onchange="applyBuyFilter()">
-                <option value="">All Categories</option>
-              </select>
             </div>
           </div>
         </div>
@@ -138,7 +122,7 @@
       try {
         if (!firebase.apps || firebase.apps.length === 0) firebase.initializeApp(FB_CONFIG);
         db = firebase.firestore();
-        db.settings({ experimentalForceLongPolling: true, merge: true });
+        db.settings({ experimentalAutoDetectLongPolling: true, merge: true });
         loadItems();
       } catch (e) {
         document.getElementById("itemsContainer").innerHTML =
@@ -177,20 +161,10 @@
       try {
         const snap = await db.collection("items").where("visible", "==", true).get();
         allItems = [];
-        const cats = new Set();
 
         snap.forEach(doc => {
           const d = { id: doc.id, ...doc.data() };
           allItems.push(d);
-          if (d.category) cats.add(d.category);
-        });
-
-        const catSel = document.getElementById("saleCat");
-        [...cats].sort().forEach(c => {
-          const o = document.createElement("option");
-          o.value = c;
-          o.textContent = cap(c);
-          catSel.appendChild(o);
         });
 
         applyFilters();
@@ -201,22 +175,13 @@
     }
 
     function applyFilters() {
-      const q    = (document.getElementById("saleSearch").value || "").toLowerCase();
-      const cat  = document.getElementById("saleCat").value;
-      const sort = document.getElementById("saleSort").value;
+      const q = (document.getElementById("saleSearch").value || "").toLowerCase();
 
-      let list = allItems.filter(i => {
-        const mq = !q   || (i.name||"").toLowerCase().includes(q) || (i.category||"").toLowerCase().includes(q);
-        const mc = !cat || i.category === cat;
-        return mq && mc;
-      });
+      let list = allItems.filter(i =>
+        !q || (i.name||"").toLowerCase().includes(q) || (i.category||"").toLowerCase().includes(q)
+      );
 
-      const co = { mint:1, excellent:2, good:3, fair:4, poor:5 };
-      if      (sort === "price-low")  list.sort((a,b) => (a.price||0)-(b.price||0));
-      else if (sort === "price-high") list.sort((a,b) => (b.price||0)-(a.price||0));
-      else if (sort === "condition")  list.sort((a,b) => (co[a.condition]||99)-(co[b.condition]||99));
-      else                            list.sort((a,b) => (a.name||"").localeCompare(b.name||""));
-
+      list.sort((a,b) => (a.name||"").localeCompare(b.name||""));
       renderItems(list);
     }
 
@@ -232,7 +197,6 @@
         <div class="item-card">
           <div class="item-header">
             <h3>${escHtml(item.name)}</h3>
-            <span class="condition ${item.condition||''}">${(item.condition||'UNKNOWN').toUpperCase()}</span>
           </div>
           <div class="item-meta">
             <span class="item-category">${item.category ? cap(item.category) : 'N/A'}</span>
@@ -249,20 +213,10 @@
       try {
         const snap = await db.collection("pricelist").get();
         allPrices = [];
-        const cats = new Set();
 
         snap.forEach(doc => {
           const d = { id: doc.id, ...doc.data() };
           allPrices.push(d);
-          if (d.category) cats.add(d.category);
-        });
-
-        const catSel = document.getElementById("buyCat");
-        [...cats].sort().forEach(c => {
-          const o = document.createElement("option");
-          o.value = c;
-          o.textContent = cap(c);
-          catSel.appendChild(o);
         });
 
         priceLoaded = true;
@@ -274,14 +228,11 @@
     }
 
     function applyBuyFilter() {
-      const q   = (document.getElementById("buySearch").value || "").toLowerCase();
-      const cat = document.getElementById("buyCat").value;
+      const q = (document.getElementById("buySearch").value || "").toLowerCase();
 
-      let list = allPrices.filter(e => {
-        const mq = !q   || (e.name||"").toLowerCase().includes(q) || (e.category||"").toLowerCase().includes(q);
-        const mc = !cat || e.category === cat;
-        return mq && mc;
-      });
+      let list = allPrices.filter(e =>
+        !q || (e.name||"").toLowerCase().includes(q) || (e.category||"").toLowerCase().includes(q)
+      );
 
       list.sort((a,b) => (a.name||"").localeCompare(b.name||""));
       renderPriceList(list);
