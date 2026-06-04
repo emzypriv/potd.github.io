@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>PAWN OF THE DEAD — Price List</title>
+  <link rel="stylesheet" href="css/style.css"/>
+</head>
+<body>
+  <div class="phone-container">
+    <div class="phone-screen">
+
+      <header>
+        <div class="logo-section">
+          <div class="logo">☠️</div>
+          <h1>PAWN OF THE DEAD</h1>
+        </div>
+        <p>What We Buy &amp; Sell</p>
+        <div class="sort-controls">
+          <div class="search-bar" style="margin-bottom:6px;">
+            <input type="text" id="searchInput" placeholder="Search items…" oninput="applyFilter()"/>
+          </div>
+          <div class="filter-row">
+            <select id="filterCat" onchange="applyFilter()">
+              <option value="">All Categories</option>
+            </select>
+          </div>
+        </div>
+      </header>
+
+      <!-- Legend -->
+      <div style="display:flex;gap:12px;padding:8px 12px;background:var(--secondary-bg);border-bottom:1px solid var(--border-color);font-size:0.7rem;flex-shrink:0;">
+        <span style="color:var(--success-text);">▲ We Buy</span>
+        <span style="color:var(--warning-text);">▼ We Sell</span>
+        <span style="color:var(--muted-text);margin-left:auto;font-style:italic;">Prices subject to condition</span>
+      </div>
+
+      <main class="active">
+        <div id="priceListContainer">
+          <div class="empty-state"><span class="empty-icon">💀</span>Loading prices…</div>
+        </div>
+      </main>
+
+    </div>
+  </div>
+
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+
+  <script>
+    const FB_CONFIG = {
+      apiKey:            "AIzaSyBSCSW4pCsTtWJSsmh4n3gqpQkVZT9WVOU",
+      authDomain:        "pawn-of-the-dead.firebaseapp.com",
+      projectId:         "pawn-of-the-dead",
+      storageBucket:     "pawn-of-the-dead.firebasestorage.app",
+      messagingSenderId: "247522640326",
+      appId:             "1:247522640326:web:afdd7403d4294e21acf2c7"
+    };
+
+    let db = null;
+    let allEntries = [];
+
+    function initFirebase() {
+      try {
+        if (!firebase.apps || firebase.apps.length === 0) firebase.initializeApp(FB_CONFIG);
+        db = firebase.firestore();
+        db.settings({ experimentalForceLongPolling: true, merge: true });
+        loadPriceList();
+      } catch (e) {
+        document.getElementById("priceListContainer").innerHTML =
+          `<div class="message error">Firebase error: ${e.message}</div>`;
+      }
+    }
+
+    async function loadPriceList() {
+      try {
+        const snap = await db.collection("pricelist").get();
+        allEntries = [];
+        const cats = new Set();
+
+        snap.forEach(doc => {
+          const d = { id: doc.id, ...doc.data() };
+          allEntries.push(d);
+          if (d.category) cats.add(d.category);
+        });
+
+        // Populate category filter
+        const catSel = document.getElementById("filterCat");
+        [...cats].sort().forEach(c => {
+          const o = document.createElement("option");
+          o.value = c;
+          o.textContent = c.charAt(0).toUpperCase() + c.slice(1);
+          catSel.appendChild(o);
+        });
+
+        applyFilter();
+      } catch (e) {
+        document.getElementById("priceListContainer").innerHTML =
+          `<div class="message error">${e.message}</div>`;
+      }
+    }
+
+    function applyFilter() {
+      const q   = (document.getElementById("searchInput").value || "").toLowerCase();
+      const cat = document.getElementById("filterCat").value;
+
+      let list = allEntries.filter(e => {
+        const mq  = !q   || (e.name||"").toLowerCase().includes(q) || (e.category||"").toLowerCase().includes(q);
+        const mc  = !cat || e.category === cat;
+        return mq && mc;
+      });
+
+      list.sort((a,b) => (a.name||"").localeCompare(b.name||""));
+      renderPriceList(list);
+    }
+
+    function renderPriceList(entries) {
+      const container = document.getElementById("priceListContainer");
+
+      if (!entries.length) {
+        container.innerHTML = `<div class="empty-state"><span class="empty-icon">☠️</span>Nothing found.</div>`;
+        return;
+      }
+
+      // Group by category
+      const groups = {};
+      entries.forEach(e => {
+        const k = e.category || "Uncategorised";
+        if (!groups[k]) groups[k] = [];
+        groups[k].push(e);
+      });
+
+      container.innerHTML = Object.keys(groups).sort().map(cat => `
+        <div class="category-group">
+          <div class="category-label">${cap(cat)}</div>
+          ${groups[cat].map(e => `
+            <div class="pricelist-card">
+              <div class="pricelist-info">
+                <h3>${escHtml(e.name)}</h3>
+                ${e.notes ? `<p>${escHtml(e.notes)}</p>` : ''}
+              </div>
+              <div class="pricelist-prices">
+                <span class="price-label">BUY</span>
+                <span class="buy">$${(e.buyPrice||0).toFixed(2)}</span>
+                <span class="price-label" style="margin-top:2px;">SELL</span>
+                <span class="sell">$${(e.sellPrice||0).toFixed(2)}</span>
+              </div>
+            </div>
+          `).join("")}
+        </div>
+      `).join("");
+    }
+
+    function escHtml(str) {
+      return String(str||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+    }
+
+    function cap(str) {
+      return String(str||"").charAt(0).toUpperCase() + String(str||"").slice(1);
+    }
+
+    window.addEventListener("load", initFirebase);
+  </script>
+</body>
+</html>

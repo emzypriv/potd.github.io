@@ -5,34 +5,42 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>PAWN OF THE DEAD — Browse</title>
   <link rel="stylesheet" href="css/style.css"/>
-  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Barlow:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
 </head>
 <body>
   <div class="phone-container">
     <div class="phone-screen">
+
       <header>
         <div class="logo-section">
           <div class="logo">☠️</div>
           <h1>PAWN OF THE DEAD</h1>
         </div>
         <p>Browse Our Cursed Inventory</p>
-        
+
         <div class="sort-controls">
-          <select id="sortBy" onchange="applySort()" style="width: 100%; padding: 6px; background: #1a1a1a; color: var(--primary-text); border: 1px solid var(--border-color); font-size: 0.75rem;">
-            <option value="name">Sort by Name</option>
-            <option value="price-low">Price: Low to High</option>
-            <option value="price-high">Price: High to Low</option>
-            <option value="category">Sort by Category</option>
-            <option value="condition">Sort by Condition</option>
-          </select>
+          <div class="search-bar" style="margin-bottom:6px;">
+            <input type="text" id="searchInput" placeholder="Search items..." oninput="applyFilters()"/>
+          </div>
+          <div class="filter-row">
+            <select id="filterCat" onchange="applyFilters()">
+              <option value="">All Categories</option>
+            </select>
+            <select id="sortBy" onchange="applyFilters()">
+              <option value="name">Name A–Z</option>
+              <option value="price-low">Price ↑</option>
+              <option value="price-high">Price ↓</option>
+              <option value="condition">Condition</option>
+            </select>
+          </div>
         </div>
       </header>
 
       <main class="active">
         <div id="itemsContainer">
-          <p style="color: var(--light-text); text-align: center; padding: 20px;">Loading inventory...</p>
+          <div class="empty-state"><span class="empty-icon">💀</span>Loading inventory...</div>
         </div>
       </main>
+
     </div>
   </div>
 
@@ -40,28 +48,27 @@
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
   <script>
+    const FB_CONFIG = {
+      apiKey:            "AIzaSyBSCSW4pCsTtWJSsmh4n3gqpQkVZT9WVOU",
+      authDomain:        "pawn-of-the-dead.firebaseapp.com",
+      projectId:         "pawn-of-the-dead",
+      storageBucket:     "pawn-of-the-dead.firebasestorage.app",
+      messagingSenderId: "247522640326",
+      appId:             "1:247522640326:web:afdd7403d4294e21acf2c7"
+    };
+
     let db = null;
     let allItems = [];
 
     function initFirebase() {
-      const config = {
-        apiKey: "AIzaSyBSCSW4pCsTtWJSsmh4n3gqpQkVZT9WVOU",
-        authDomain: "pawn-of-the-dead.firebaseapp.com",
-        projectId: "pawn-of-the-dead",
-        storageBucket: "pawn-of-the-dead.firebasestorage.app",
-        messagingSenderId: "247522640326",
-        appId: "1:247522640326:web:afdd7403d4294e21acf2c7"
-      };
-
       try {
-        if (!firebase.apps || firebase.apps.length === 0) {
-          firebase.initializeApp(config);
-        }
+        if (!firebase.apps || firebase.apps.length === 0) firebase.initializeApp(FB_CONFIG);
         db = firebase.firestore();
+        db.settings({ experimentalForceLongPolling: true, merge: true });
         loadItems();
-      } catch(e) {
-        console.error(e);
-        document.getElementById("itemsContainer").innerHTML = "<p style='color: red;'>Firebase error: " + e.message + "</p>";
+      } catch (e) {
+        document.getElementById("itemsContainer").innerHTML =
+          `<div class="message error">Firebase error: ${e.message}</div>`;
       }
     }
 
@@ -69,59 +76,73 @@
       try {
         const snap = await db.collection("items").where("visible", "==", true).get();
         allItems = [];
-        
+        const cats = new Set();
+
         snap.forEach(doc => {
-          allItems.push({ id: doc.id, ...doc.data() });
+          const d = { id: doc.id, ...doc.data() };
+          allItems.push(d);
+          if (d.category) cats.add(d.category);
         });
-        
-        applySort();
-      } catch(e) {
-        console.error(e);
-        document.getElementById("itemsContainer").innerHTML = "<p style='color: red;'>" + e.message + "</p>";
+
+        // Populate category filter
+        const catSel = document.getElementById("filterCat");
+        [...cats].sort().forEach(c => {
+          const o = document.createElement("option");
+          o.value = c; o.textContent = c.charAt(0).toUpperCase() + c.slice(1);
+          catSel.appendChild(o);
+        });
+
+        applyFilters();
+      } catch (e) {
+        document.getElementById("itemsContainer").innerHTML =
+          `<div class="message error">${e.message}</div>`;
       }
     }
 
-    function applySort() {
+    function applyFilters() {
+      const q      = (document.getElementById("searchInput").value || "").toLowerCase();
+      const cat    = document.getElementById("filterCat").value;
       const sortBy = document.getElementById("sortBy").value;
-      let sorted = [...allItems];
 
-      if (sortBy === "price-low") {
-        sorted.sort((a, b) => (a.price || 0) - (b.price || 0));
-      } else if (sortBy === "price-high") {
-        sorted.sort((a, b) => (b.price || 0) - (a.price || 0));
-      } else if (sortBy === "category") {
-        sorted.sort((a, b) => (a.category || "").localeCompare(b.category || ""));
-      } else if (sortBy === "condition") {
-        const condOrder = { mint: 1, excellent: 2, good: 3, fair: 4, poor: 5 };
-        sorted.sort((a, b) => (condOrder[a.condition] || 99) - (condOrder[b.condition] || 99));
-      } else {
-        sorted.sort((a, b) => (a.name || "").localeCompare(b.name || ""));
-      }
+      let filtered = allItems.filter(item => {
+        const matchQ   = !q || (item.name || "").toLowerCase().includes(q) || (item.category || "").toLowerCase().includes(q);
+        const matchCat = !cat || item.category === cat;
+        return matchQ && matchCat;
+      });
 
-      renderItems(sorted);
+      const condOrder = { mint:1, excellent:2, good:3, fair:4, poor:5 };
+      if      (sortBy === "price-low")  filtered.sort((a,b) => (a.price||0) - (b.price||0));
+      else if (sortBy === "price-high") filtered.sort((a,b) => (b.price||0) - (a.price||0));
+      else if (sortBy === "condition")  filtered.sort((a,b) => (condOrder[a.condition]||99) - (condOrder[b.condition]||99));
+      else                              filtered.sort((a,b) => (a.name||"").localeCompare(b.name||""));
+
+      renderItems(filtered);
     }
 
     function renderItems(items) {
       const container = document.getElementById("itemsContainer");
-      container.innerHTML = "";
 
-      if (items.length === 0) {
-        container.innerHTML = "<p style='color: var(--light-text); text-align: center; padding: 20px;'>Inventory depleted...</p>";
+      if (!items.length) {
+        container.innerHTML = `<div class="empty-state"><span class="empty-icon">☠️</span>No items found.</div>`;
         return;
       }
 
-      items.forEach(item => {
-        container.innerHTML += `
-          <div class="item-card">
-            <div class="item-header">
-              <h3>${item.name}</h3>
-              <span class="condition ${item.condition}">${(item.condition || "UNKNOWN").toUpperCase()}</span>
-            </div>
-            <p class="item-category"><strong>${item.category ? item.category.toUpperCase() : "N/A"}</strong></p>
-            <div class="item-price">$${(item.price || 0).toFixed(2)}</div>
+      container.innerHTML = items.map(item => `
+        <div class="item-card">
+          <div class="item-header">
+            <h3>${escHtml(item.name)}</h3>
+            <span class="condition ${item.condition || ''}">${(item.condition || 'UNKNOWN').toUpperCase()}</span>
           </div>
-        `;
-      });
+          <div class="item-meta">
+            <span class="item-category">${item.category ? item.category.toUpperCase() : 'N/A'}</span>
+          </div>
+          <div class="item-price">$${(item.price || 0).toFixed(2)}</div>
+        </div>
+      `).join("");
+    }
+
+    function escHtml(str) {
+      return String(str).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
     }
 
     window.addEventListener("load", initFirebase);

@@ -5,300 +5,878 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>PAWN OF THE DEAD — Staff Dashboard</title>
   <link rel="stylesheet" href="css/style.css"/>
-  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Barlow:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
 </head>
 <body>
   <div class="phone-container">
     <div class="phone-screen">
+
       <header>
         <div class="logo-section">
           <div class="logo">☠️</div>
           <h1>PAWN OF THE DEAD</h1>
         </div>
-        <p>Staff Dashboard</p>
+        <p id="welcomeMsg">Staff Dashboard</p>
         <nav>
-          <button class="nav-btn active" onclick="switchPage('inventory', this)">Inventory</button>
-          <button class="nav-btn" onclick="switchPage('add', this)">Add Item</button>
-          <button class="nav-btn" onclick="switchPage('settings', this)">Settings</button>
-          <button class="nav-btn" onclick="doLogout()">Logout</button>
+          <button class="nav-btn active" onclick="switchPage('inventory',this)">Stock</button>
+          <button class="nav-btn" onclick="switchPage('add',this)">+ Add</button>
+          <button class="nav-btn" onclick="switchPage('pricelist',this)">Prices</button>
+          <button class="nav-btn" onclick="switchPage('staff',this)">Staff</button>
+          <button class="nav-btn" onclick="switchPage('settings',this)">⚙</button>
+          <button class="nav-btn" onclick="doLogout()">⏏</button>
         </nav>
       </header>
 
-      <!-- INVENTORY -->
+      <!-- ══════════════════════════════════════════════════════
+           INVENTORY TAB
+      ══════════════════════════════════════════════════════ -->
       <main id="inventory" class="active">
-        <h2 style="color: var(--primary-text); font-size: 1.1rem; margin: 12px 0; text-transform: uppercase;">Current Stock</h2>
-        <div id="inventoryList"><p style="color: var(--light-text);">Loading...</p></div>
+
+        <!-- Stats row -->
+        <div class="stats-row" id="statsRow">
+          <div class="stat-box">
+            <div class="label">Total Items</div>
+            <div class="value" id="statTotal">—</div>
+          </div>
+          <div class="stat-box">
+            <div class="label">Public</div>
+            <div class="value" id="statPublic">—</div>
+          </div>
+          <div class="stat-box">
+            <div class="label">Stock Value</div>
+            <div class="value" id="statValue">—</div>
+          </div>
+        </div>
+
+        <!-- Search / filter -->
+        <div class="search-bar">
+          <input type="text" id="invSearch" placeholder="Search items…" oninput="filterInventory()"/>
+        </div>
+        <div class="filter-row">
+          <select id="invCatFilter" onchange="filterInventory()">
+            <option value="">All Categories</option>
+          </select>
+          <select id="invSort" onchange="filterInventory()">
+            <option value="name">Name A–Z</option>
+            <option value="price-low">Price ↑</option>
+            <option value="price-high">Price ↓</option>
+            <option value="condition">Condition</option>
+          </select>
+        </div>
+
+        <div id="inventoryList">
+          <div class="empty-state"><span class="empty-icon">💀</span>Loading…</div>
+        </div>
       </main>
 
-      <!-- ADD ITEM -->
+      <!-- ══════════════════════════════════════════════════════
+           ADD ITEM TAB
+      ══════════════════════════════════════════════════════ -->
       <main id="add">
-        <h2 style="color: var(--primary-text); font-size: 1.1rem; margin: 12px 0; text-transform: uppercase;">Register Item</h2>
-        <form onsubmit="addItem(event)">
-          <div class="form-group">
-            <label>Name</label>
-            <input type="text" id="itemName" required />
-          </div>
+        <p class="section-title">Register Item</p>
+
+        <div class="form-group">
+          <label>Item Name</label>
+          <input type="text" id="itemName" placeholder="e.g. Cursed Pocket Watch"/>
+        </div>
+        <div class="form-row">
           <div class="form-group">
             <label>Category</label>
-            <select id="itemCat" required>
-              <option value="">Select Category</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label>Price ($)</label>
-            <input type="number" id="itemPrice" step="0.01" required />
+            <select id="itemCat"><option value="">Select…</option></select>
           </div>
           <div class="form-group">
             <label>Condition</label>
-            <select id="itemCond" required>
-              <option value="">Select Condition</option>
-            </select>
+            <select id="itemCond"><option value="">Select…</option></select>
           </div>
-          <div class="form-group">
-            <label><input type="checkbox" id="itemVis" checked /> Visible to Public</label>
-          </div>
-          <button type="submit" class="btn-primary">Add Item</button>
-        </form>
-        <p id="addMsg" style="margin-top: 10px; font-size: 0.9rem;"></p>
+        </div>
+        <div class="form-group">
+          <label>Price ($)</label>
+          <input type="number" id="itemPrice" step="0.01" min="0" placeholder="0.00"/>
+        </div>
+        <div class="form-group">
+          <label class="checkbox-label">
+            <input type="checkbox" id="itemVis" checked/>
+            Visible to public
+          </label>
+        </div>
+
+        <button class="btn-primary" onclick="addItem()">Add Item</button>
+        <div id="addMsg"></div>
       </main>
 
-      <!-- SETTINGS -->
+      <!-- ══════════════════════════════════════════════════════
+           PRICE LIST TAB  (staff edit)
+      ══════════════════════════════════════════════════════ -->
+      <main id="pricelist">
+        <p class="section-title">Price List</p>
+
+        <!-- Add entry form -->
+        <div style="background:var(--card-bg);border:1px solid var(--border-color);border-radius:var(--radius);padding:12px;margin-bottom:14px;">
+          <p style="font-size:0.72rem;font-weight:700;color:var(--muted-text);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">Add / Update Entry</p>
+          <div class="form-group">
+            <label>Item Name</label>
+            <input type="text" id="plName" placeholder="e.g. Rusty Pistol"/>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Category</label>
+              <select id="plCat"><option value="">Select…</option></select>
+            </div>
+            <div class="form-group">
+              <label>Notes</label>
+              <input type="text" id="plNotes" placeholder="optional"/>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>We Buy ($)</label>
+              <input type="number" id="plBuy" step="0.01" min="0" placeholder="0.00"/>
+            </div>
+            <div class="form-group">
+              <label>We Sell ($)</label>
+              <input type="number" id="plSell" step="0.01" min="0" placeholder="0.00"/>
+            </div>
+          </div>
+          <button class="btn-secondary btn-small" style="width:100%;margin-top:4px;" onclick="addPriceEntry()">Save Entry</button>
+          <div id="plMsg"></div>
+        </div>
+
+        <!-- Search -->
+        <div class="search-bar" style="margin-bottom:10px;">
+          <input type="text" id="plSearch" placeholder="Search price list…" oninput="filterPriceList()"/>
+        </div>
+
+        <div id="priceListEntries">
+          <div class="empty-state"><span class="empty-icon">💀</span>Loading…</div>
+        </div>
+      </main>
+
+      <!-- ══════════════════════════════════════════════════════
+           STAFF TAB
+      ══════════════════════════════════════════════════════ -->
+      <main id="staff">
+        <p class="section-title">Staff Management</p>
+
+        <!-- Add staff form -->
+        <div style="background:var(--card-bg);border:1px solid var(--border-color);border-radius:var(--radius);padding:12px;margin-bottom:14px;">
+          <p style="font-size:0.72rem;font-weight:700;color:var(--muted-text);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">Add Staff Member</p>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Username (login ID)</label>
+              <input type="text" id="sfUsername" placeholder="e.g. ghost"/>
+            </div>
+            <div class="form-group">
+              <label>Display Name</label>
+              <input type="text" id="sfDisplay" placeholder="e.g. Ghost"/>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>PIN / Password</label>
+              <input type="text" id="sfPin" placeholder="e.g. 1234"/>
+            </div>
+            <div class="form-group">
+              <label>Role</label>
+              <select id="sfRole">
+                <option value="staff">Staff</option>
+                <option value="manager">Manager</option>
+              </select>
+            </div>
+          </div>
+          <button class="btn-secondary btn-small" style="width:100%;margin-top:4px;" onclick="addStaff()">Add Member</button>
+          <div id="sfMsg"></div>
+        </div>
+
+        <div id="staffList">
+          <div class="empty-state"><span class="empty-icon">💀</span>Loading…</div>
+        </div>
+      </main>
+
+      <!-- ══════════════════════════════════════════════════════
+           SETTINGS TAB
+      ══════════════════════════════════════════════════════ -->
       <main id="settings">
-        <h2 style="color: var(--primary-text); font-size: 1.1rem; margin: 12px 0; text-transform: uppercase;">Manage Options</h2>
-        
-        <div style="margin-bottom: 20px;">
-          <h3 style="color: var(--primary-text); font-size: 0.95rem; margin: 10px 0 8px; text-transform: uppercase;">Categories</h3>
+        <p class="section-title">Manage Options</p>
+
+        <div style="margin-bottom:20px;">
+          <p style="font-size:0.8rem;font-weight:700;color:var(--primary-text);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">Categories</p>
           <div id="categoriesList"></div>
-          <div style="display: flex; gap: 5px; margin-top: 10px;">
-            <input type="text" id="newCategory" placeholder="New category" style="flex: 1; padding: 6px; background: #0f0f0f; border: 1px solid var(--border-color); color: var(--light-text); font-size: 0.85rem;"/>
-            <button type="button" onclick="addCategory()" class="btn-secondary btn-small">Add</button>
+          <div class="add-option-row">
+            <input type="text" id="newCategory" placeholder="New category"/>
+            <button class="btn-secondary btn-small" onclick="addCategory()">Add</button>
           </div>
         </div>
 
         <div>
-          <h3 style="color: var(--primary-text); font-size: 0.95rem; margin: 10px 0 8px; text-transform: uppercase;">Conditions</h3>
+          <p style="font-size:0.8rem;font-weight:700;color:var(--primary-text);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">Conditions</p>
           <div id="conditionsList"></div>
-          <div style="display: flex; gap: 5px; margin-top: 10px;">
-            <input type="text" id="newCondition" placeholder="New condition" style="flex: 1; padding: 6px; background: #0f0f0f; border: 1px solid var(--border-color); color: var(--light-text); font-size: 0.85rem;"/>
-            <button type="button" onclick="addCondition()" class="btn-secondary btn-small">Add</button>
+          <div class="add-option-row">
+            <input type="text" id="newCondition" placeholder="New condition"/>
+            <button class="btn-secondary btn-small" onclick="addCondition()">Add</button>
           </div>
         </div>
       </main>
-    </div>
-  </div>
+
+    </div><!-- phone-screen -->
+  </div><!-- phone-container -->
 
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
   <script>
-    let db = null;
-    let categories = [];
-    let conditions = [];
+  // ═══════════════════════════════════════════════════════════
+  //  FIREBASE INIT
+  // ═══════════════════════════════════════════════════════════
+  const FB_CONFIG = {
+    apiKey:            "AIzaSyBSCSW4pCsTtWJSsmh4n3gqpQkVZT9WVOU",
+    authDomain:        "pawn-of-the-dead.firebaseapp.com",
+    projectId:         "pawn-of-the-dead",
+    storageBucket:     "pawn-of-the-dead.firebasestorage.app",
+    messagingSenderId: "247522640326",
+    appId:             "1:247522640326:web:afdd7403d4294e21acf2c7"
+  };
 
-    function initFirebase() {
-      const config = {
-        apiKey: "AIzaSyBSCSW4pCsTtWJSsmh4n3gqpQkVZT9WVOU",
-        authDomain: "pawn-of-the-dead.firebaseapp.com",
-        projectId: "pawn-of-the-dead",
-        storageBucket: "pawn-of-the-dead.firebasestorage.app",
-        messagingSenderId: "247522640326",
-        appId: "1:247522640326:web:afdd7403d4294e21acf2c7"
-      };
+  let db = null;
+  let categories = [];
+  let conditions  = [];
+  let allInventory   = [];
+  let allPriceList   = [];
+  let allStaff       = [];
+  let currentUser    = "";
+  let currentRole    = "";
 
-      try {
-        if (!firebase.apps || firebase.apps.length === 0) {
-          firebase.initializeApp(config);
-        }
-        db = firebase.firestore();
-        checkAuth();
-      } catch(e) {
-        console.error(e);
-      }
+  // ── Item currently being edited ──
+  let editingItemId = null;
+
+  function initFirebase() {
+    try {
+      if (!firebase.apps || firebase.apps.length === 0) firebase.initializeApp(FB_CONFIG);
+      db = firebase.firestore();
+      // FiveM CEF fix — force long polling, avoid websocket / window refs
+      db.settings({ experimentalForceLongPolling: true, merge: true });
+      checkAuth();
+    } catch (e) {
+      console.error("Firebase init:", e);
     }
+  }
 
-    function checkAuth() {
-      const user = sessionStorage.getItem("potd_user");
-      const role = sessionStorage.getItem("potd_role");
-      if (!user || role !== "manager") {
-        window.location.href = "index.html";
-        return;
-      }
-      loadOptions();
-      loadInventory();
-    }
+  // ═══════════════════════════════════════════════════════════
+  //  AUTH
+  // ═══════════════════════════════════════════════════════════
+  function checkAuth() {
+    currentUser = sessionStorage.getItem("potd_user") || "";
+    currentRole = sessionStorage.getItem("potd_role") || "";
+    const display = sessionStorage.getItem("potd_display") || currentUser;
 
-    async function loadOptions() {
-      try {
-        const doc = await db.collection("settings").doc("options").get();
-        if (doc.exists) {
-          const data = doc.data();
-          categories = data.categories || [];
-          conditions = data.conditions || [];
-        } else {
-          categories = ["weapons", "jewelry", "electronics", "furniture", "antiques", "cursed"];
-          conditions = ["mint", "excellent", "good", "fair", "poor"];
-        }
-        updateDropdowns();
-        renderOptions();
-      } catch(e) {
-        console.error(e);
-      }
-    }
-
-    function updateDropdowns() {
-      const catSelect = document.getElementById("itemCat");
-      const condSelect = document.getElementById("itemCond");
-      
-      catSelect.innerHTML = '<option value="">Select Category</option>';
-      categories.forEach(c => {
-        catSelect.innerHTML += `<option value="${c}">${c.toUpperCase()}</option>`;
-      });
-      
-      condSelect.innerHTML = '<option value="">Select Condition</option>';
-      conditions.forEach(c => {
-        condSelect.innerHTML += `<option value="${c}">${c.toUpperCase()}</option>`;
-      });
-    }
-
-    function renderOptions() {
-      const catDiv = document.getElementById("categoriesList");
-      const condDiv = document.getElementById("conditionsList");
-      
-      catDiv.innerHTML = categories.map(c => `
-        <div style="display: flex; justify-content: space-between; align-items: center; background: #1a1a1a; padding: 8px; margin: 4px 0; border: 1px solid var(--border-color);">
-          <span style="color: var(--light-text); font-size: 0.9rem;">${c}</span>
-          <button type="button" onclick="deleteCategory('${c}')" class="btn-danger btn-small" style="padding: 3px 8px; font-size: 0.7rem;">Delete</button>
-        </div>
-      `).join("");
-      
-      condDiv.innerHTML = conditions.map(c => `
-        <div style="display: flex; justify-content: space-between; align-items: center; background: #1a1a1a; padding: 8px; margin: 4px 0; border: 1px solid var(--border-color);">
-          <span style="color: var(--light-text); font-size: 0.9rem;">${c}</span>
-          <button type="button" onclick="deleteCondition('${c}')" class="btn-danger btn-small" style="padding: 3px 8px; font-size: 0.7rem;">Delete</button>
-        </div>
-      `).join("");
-    }
-
-    async function addCategory() {
-      const input = document.getElementById("newCategory");
-      const cat = input.value.trim().toLowerCase();
-      if (!cat || categories.includes(cat)) return;
-      
-      categories.push(cat);
-      await saveOptions();
-      input.value = "";
-    }
-
-    async function deleteCategory(cat) {
-      categories = categories.filter(c => c !== cat);
-      await saveOptions();
-    }
-
-    async function addCondition() {
-      const input = document.getElementById("newCondition");
-      const cond = input.value.trim().toLowerCase();
-      if (!cond || conditions.includes(cond)) return;
-      
-      conditions.push(cond);
-      await saveOptions();
-      input.value = "";
-    }
-
-    async function deleteCondition(cond) {
-      conditions = conditions.filter(c => c !== cond);
-      await saveOptions();
-    }
-
-    async function saveOptions() {
-      try {
-        await db.collection("settings").doc("options").set({ categories, conditions });
-        updateDropdowns();
-        renderOptions();
-      } catch(e) {
-        alert("Error saving options: " + e.message);
-      }
-    }
-
-    function doLogout() {
-      sessionStorage.clear();
+    if (!currentUser || currentRole !== "manager") {
       window.location.href = "index.html";
+      return;
     }
 
-    function switchPage(page, btn) {
-      document.querySelectorAll("main").forEach(m => m.classList.remove("active"));
-      document.getElementById(page).classList.add("active");
-      document.querySelectorAll(".nav-btn").forEach(b => b.classList.remove("active"));
-      btn.classList.add("active");
+    document.getElementById("welcomeMsg").textContent = `Welcome, ${display}`;
+    loadOptions();
+    loadInventory();
+  }
 
-      if (page === "inventory") loadInventory();
+  function doLogout() {
+    sessionStorage.clear();
+    window.location.href = "index.html";
+  }
+
+  // ═══════════════════════════════════════════════════════════
+  //  NAV
+  // ═══════════════════════════════════════════════════════════
+  function switchPage(page, btn) {
+    document.querySelectorAll("main").forEach(m => m.classList.remove("active"));
+    document.getElementById(page).classList.add("active");
+    document.querySelectorAll(".nav-btn").forEach(b => b.classList.remove("active"));
+    btn.classList.add("active");
+
+    if (page === "inventory") { loadInventory(); }
+    if (page === "pricelist") { loadPriceList(); }
+    if (page === "staff")     { loadStaff(); }
+  }
+
+  // ═══════════════════════════════════════════════════════════
+  //  OPTIONS (categories / conditions)
+  // ═══════════════════════════════════════════════════════════
+  async function loadOptions() {
+    try {
+      const doc = await db.collection("settings").doc("options").get();
+      if (doc.exists) {
+        const d = doc.data();
+        categories = d.categories || [];
+        conditions  = d.conditions  || [];
+      } else {
+        categories = ["weapons","jewelry","electronics","furniture","antiques","cursed"];
+        conditions  = ["mint","excellent","good","fair","poor"];
+      }
+      updateDropdowns();
+      renderOptions();
+    } catch (e) { console.error("loadOptions:", e); }
+  }
+
+  function updateDropdowns() {
+    ["itemCat","plCat"].forEach(id => {
+      const sel = document.getElementById(id);
+      if (!sel) return;
+      sel.innerHTML = '<option value="">Select…</option>';
+      categories.forEach(c => sel.innerHTML += `<option value="${c}">${cap(c)}</option>`);
+    });
+
+    const condSel = document.getElementById("itemCond");
+    if (condSel) {
+      condSel.innerHTML = '<option value="">Select…</option>';
+      conditions.forEach(c => condSel.innerHTML += `<option value="${c}">${cap(c)}</option>`);
     }
 
-    async function loadInventory() {
-      try {
-        const snap = await db.collection("items").get();
-        const container = document.getElementById("inventoryList");
-        container.innerHTML = "";
+    // Inventory filter dropdowns
+    ["invCatFilter"].forEach(id => {
+      const sel = document.getElementById(id);
+      if (!sel) return;
+      const cur = sel.value;
+      sel.innerHTML = '<option value="">All Categories</option>';
+      categories.forEach(c => sel.innerHTML += `<option value="${c}">${cap(c)}</option>`);
+      sel.value = cur;
+    });
+  }
 
-        if (snap.empty) {
-          container.innerHTML = "<p style='color: var(--light-text);'>No items</p>";
-          return;
-        }
+  function renderOptions() {
+    document.getElementById("categoriesList").innerHTML = categories.map(c => `
+      <div class="option-item">
+        <span>${c}</span>
+        <button class="btn-icon delete" onclick="deleteCategory('${c}')">✕</button>
+      </div>`).join("") || `<div class="empty-state" style="padding:10px;">None added.</div>`;
 
-        snap.forEach(doc => {
-          const item = doc.data();
-          const vis = item.visible ? "✓" : "✗";
-          container.innerHTML += `
-            <div class="item-card">
-              <div style="display: flex; justify-content: space-between; align-items: center;">
-                <div>
-                  <h3 style="font-size: 1rem;">${item.name}</h3>
-                  <p style="font-size: 0.9rem; color: var(--light-text);"><strong>$${(item.price || 0).toFixed(2)}</strong></p>
-                  <p style="font-size: 0.85rem; color: var(--light-text);">Category: ${item.category} | Condition: ${item.condition}</p>
+    document.getElementById("conditionsList").innerHTML = conditions.map(c => `
+      <div class="option-item">
+        <span>${c}</span>
+        <button class="btn-icon delete" onclick="deleteCondition('${c}')">✕</button>
+      </div>`).join("") || `<div class="empty-state" style="padding:10px;">None added.</div>`;
+  }
+
+  async function addCategory() {
+    const input = document.getElementById("newCategory");
+    const val   = input.value.trim().toLowerCase();
+    if (!val || categories.includes(val)) return;
+    categories.push(val);
+    await saveOptions();
+    input.value = "";
+  }
+
+  async function deleteCategory(cat) {
+    categories = categories.filter(c => c !== cat);
+    await saveOptions();
+  }
+
+  async function addCondition() {
+    const input = document.getElementById("newCondition");
+    const val   = input.value.trim().toLowerCase();
+    if (!val || conditions.includes(val)) return;
+    conditions.push(val);
+    await saveOptions();
+    input.value = "";
+  }
+
+  async function deleteCondition(cond) {
+    conditions = conditions.filter(c => c !== cond);
+    await saveOptions();
+  }
+
+  async function saveOptions() {
+    try {
+      await db.collection("settings").doc("options").set({ categories, conditions });
+      updateDropdowns();
+      renderOptions();
+    } catch (e) { alert("Error saving options: " + e.message); }
+  }
+
+  // ═══════════════════════════════════════════════════════════
+  //  INVENTORY
+  // ═══════════════════════════════════════════════════════════
+  async function loadInventory() {
+    try {
+      const snap = await db.collection("items").get();
+      allInventory = [];
+      snap.forEach(doc => allInventory.push({ id: doc.id, ...doc.data() }));
+      updateStats();
+      filterInventory();
+    } catch (e) {
+      document.getElementById("inventoryList").innerHTML =
+        `<div class="message error">⚠ ${e.message}</div>`;
+    }
+  }
+
+  function updateStats() {
+    const total  = allInventory.length;
+    const pub    = allInventory.filter(i => i.visible).length;
+    const value  = allInventory.reduce((s, i) => s + (i.price || 0), 0);
+    document.getElementById("statTotal").textContent  = total;
+    document.getElementById("statPublic").textContent = pub;
+    document.getElementById("statValue").textContent  = "$" + (value >= 1000 ? (value/1000).toFixed(1)+"k" : value.toFixed(0));
+  }
+
+  function filterInventory() {
+    const q    = (document.getElementById("invSearch").value || "").toLowerCase();
+    const cat  = document.getElementById("invCatFilter").value;
+    const sort = document.getElementById("invSort").value;
+
+    let list = allInventory.filter(i => {
+      const mq  = !q   || (i.name||"").toLowerCase().includes(q) || (i.category||"").toLowerCase().includes(q);
+      const mc  = !cat || i.category === cat;
+      return mq && mc;
+    });
+
+    const co = { mint:1,excellent:2,good:3,fair:4,poor:5 };
+    if      (sort === "price-low")  list.sort((a,b) => (a.price||0)-(b.price||0));
+    else if (sort === "price-high") list.sort((a,b) => (b.price||0)-(a.price||0));
+    else if (sort === "condition")  list.sort((a,b) => (co[a.condition]||99)-(co[b.condition]||99));
+    else                            list.sort((a,b) => (a.name||"").localeCompare(b.name||""));
+
+    renderInventory(list);
+  }
+
+  function renderInventory(items) {
+    const container = document.getElementById("inventoryList");
+
+    if (!items.length) {
+      container.innerHTML = `<div class="empty-state"><span class="empty-icon">☠️</span>No items found.</div>`;
+      return;
+    }
+
+    container.innerHTML = items.map(item => `
+      <div class="item-card" id="card-${item.id}">
+        <div class="item-header">
+          <h3>${escHtml(item.name)}</h3>
+          <div style="display:flex;gap:4px;align-items:center;flex-shrink:0;">
+            <span class="condition ${item.condition||''}">${(item.condition||'?').toUpperCase()}</span>
+          </div>
+        </div>
+        <div class="item-meta">
+          <span class="item-category">${item.category ? cap(item.category) : 'N/A'}</span>
+          <span class="item-price">$${(item.price||0).toFixed(2)}</span>
+          <span class="vis-badge ${item.visible ? 'public' : 'hidden'}">${item.visible ? 'Public' : 'Hidden'}</span>
+        </div>
+
+        <!-- Inline edit form (hidden by default) -->
+        <div class="edit-form" id="edit-${item.id}">
+          <div class="form-group">
+            <label>Name</label>
+            <input type="text" id="eName-${item.id}" value="${escHtml(item.name)}"/>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Category</label>
+              <select id="eCat-${item.id}">${catOptions(item.category)}</select>
+            </div>
+            <div class="form-group">
+              <label>Condition</label>
+              <select id="eCond-${item.id}">${condOptions(item.condition)}</select>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Price ($)</label>
+              <input type="number" id="ePrice-${item.id}" value="${(item.price||0).toFixed(2)}" step="0.01" min="0"/>
+            </div>
+            <div class="form-group" style="display:flex;align-items:flex-end;padding-bottom:2px;">
+              <label class="checkbox-label">
+                <input type="checkbox" id="eVis-${item.id}" ${item.visible ? 'checked' : ''}/>
+                Public
+              </label>
+            </div>
+          </div>
+          <div style="display:flex;gap:6px;">
+            <button class="btn-edit btn-small" style="flex:1;" onclick="saveEdit('${item.id}')">Save</button>
+            <button class="btn-ghost btn-small" style="flex:1;" onclick="cancelEdit('${item.id}')">Cancel</button>
+          </div>
+        </div>
+
+        <div class="item-actions">
+          <button class="btn-icon edit" onclick="toggleEdit('${item.id}')" title="Edit">✏</button>
+          <button class="btn-icon delete" onclick="deleteItem('${item.id}')" title="Delete">🗑</button>
+        </div>
+      </div>
+    `).join("");
+  }
+
+  function catOptions(selected) {
+    return categories.map(c =>
+      `<option value="${c}" ${c===selected?'selected':''}>${cap(c)}</option>`
+    ).join("");
+  }
+
+  function condOptions(selected) {
+    return conditions.map(c =>
+      `<option value="${c}" ${c===selected?'selected':''}>${cap(c)}</option>`
+    ).join("");
+  }
+
+  function toggleEdit(id) {
+    const form = document.getElementById(`edit-${id}`);
+    form.classList.toggle("open");
+  }
+
+  function cancelEdit(id) {
+    document.getElementById(`edit-${id}`).classList.remove("open");
+  }
+
+  async function saveEdit(id) {
+    const name  = document.getElementById(`eName-${id}`).value.trim();
+    const cat   = document.getElementById(`eCat-${id}`).value;
+    const cond  = document.getElementById(`eCond-${id}`).value;
+    const price = parseFloat(document.getElementById(`ePrice-${id}`).value);
+    const vis   = document.getElementById(`eVis-${id}`).checked;
+
+    if (!name || !cat || !cond || isNaN(price)) {
+      alert("Please fill in all fields."); return;
+    }
+
+    try {
+      await db.collection("items").doc(id).update({ name, category: cat, condition: cond, price, visible: vis });
+      cancelEdit(id);
+      loadInventory();
+    } catch (e) { alert("Save error: " + e.message); }
+  }
+
+  async function addItem() {
+    const msg   = document.getElementById("addMsg");
+    const name  = document.getElementById("itemName").value.trim();
+    const cat   = document.getElementById("itemCat").value;
+    const cond  = document.getElementById("itemCond").value;
+    const price = parseFloat(document.getElementById("itemPrice").value);
+    const vis   = document.getElementById("itemVis").checked;
+
+    if (!name || !cat || !cond || isNaN(price)) {
+      msg.innerHTML = `<div class="message error">⚠ Please fill in all fields.</div>`;
+      return;
+    }
+
+    try {
+      await db.collection("items").add({ name, category: cat, condition: cond, price, visible: vis, createdAt: new Date().toISOString() });
+      msg.innerHTML = `<div class="message success">✓ Item added successfully.</div>`;
+      document.getElementById("itemName").value  = "";
+      document.getElementById("itemPrice").value = "";
+      document.getElementById("itemCat").value   = "";
+      document.getElementById("itemCond").value  = "";
+      document.getElementById("itemVis").checked = true;
+      setTimeout(() => msg.innerHTML = "", 3000);
+    } catch (e) {
+      msg.innerHTML = `<div class="message error">✗ ${e.message}</div>`;
+    }
+  }
+
+  async function deleteItem(id) {
+    if (!confirm("Delete this item?")) return;
+    try {
+      await db.collection("items").doc(id).delete();
+      loadInventory();
+    } catch (e) { alert(e.message); }
+  }
+
+  // ═══════════════════════════════════════════════════════════
+  //  PRICE LIST
+  // ═══════════════════════════════════════════════════════════
+  async function loadPriceList() {
+    const container = document.getElementById("priceListEntries");
+    container.innerHTML = `<div class="empty-state"><span class="empty-icon">💀</span>Loading…</div>`;
+    try {
+      const snap = await db.collection("pricelist").get();
+      allPriceList = [];
+      snap.forEach(doc => allPriceList.push({ id: doc.id, ...doc.data() }));
+      filterPriceList();
+    } catch (e) {
+      container.innerHTML = `<div class="message error">⚠ ${e.message}</div>`;
+    }
+  }
+
+  function filterPriceList() {
+    const q = (document.getElementById("plSearch").value || "").toLowerCase();
+    const list = allPriceList.filter(e =>
+      !q || (e.name||"").toLowerCase().includes(q) || (e.category||"").toLowerCase().includes(q)
+    );
+    list.sort((a,b) => (a.name||"").localeCompare(b.name||""));
+    renderPriceList(list);
+  }
+
+  function renderPriceList(entries) {
+    const container = document.getElementById("priceListEntries");
+
+    if (!entries.length) {
+      container.innerHTML = `<div class="empty-state"><span class="empty-icon">☠️</span>No entries yet.</div>`;
+      return;
+    }
+
+    // Group by category
+    const groups = {};
+    entries.forEach(e => {
+      const k = e.category || "Uncategorised";
+      if (!groups[k]) groups[k] = [];
+      groups[k].push(e);
+    });
+
+    container.innerHTML = Object.keys(groups).sort().map(cat => `
+      <div class="category-group">
+        <div class="category-label">${cap(cat)}</div>
+        ${groups[cat].map(e => `
+          <div class="pricelist-card" id="plcard-${e.id}">
+            <div class="pricelist-info" style="flex:1;">
+              <h3>${escHtml(e.name)}</h3>
+              ${e.notes ? `<p>${escHtml(e.notes)}</p>` : ''}
+
+              <!-- Edit form -->
+              <div class="edit-form" id="pledit-${e.id}">
+                <div class="form-group" style="margin-top:8px;">
+                  <label>Name</label>
+                  <input type="text" id="pleName-${e.id}" value="${escHtml(e.name)}"/>
                 </div>
-                <button class="btn-danger btn-small" onclick="deleteItem('${doc.id}')" style="font-size: 0.8rem;">Delete</button>
+                <div class="form-row">
+                  <div class="form-group">
+                    <label>We Buy ($)</label>
+                    <input type="number" id="pleBuy-${e.id}" value="${(e.buyPrice||0).toFixed(2)}" step="0.01"/>
+                  </div>
+                  <div class="form-group">
+                    <label>We Sell ($)</label>
+                    <input type="number" id="pleSell-${e.id}" value="${(e.sellPrice||0).toFixed(2)}" step="0.01"/>
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label>Notes</label>
+                  <input type="text" id="pleNotes-${e.id}" value="${escHtml(e.notes||'')}"/>
+                </div>
+                <div style="display:flex;gap:6px;margin-top:4px;">
+                  <button class="btn-edit btn-small" style="flex:1;" onclick="savePriceEdit('${e.id}')">Save</button>
+                  <button class="btn-ghost btn-small" style="flex:1;" onclick="cancelPLEdit('${e.id}')">Cancel</button>
+                </div>
               </div>
             </div>
-          `;
-        });
-      } catch(e) {
-        console.error(e);
-      }
+
+            <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0;">
+              <div class="pricelist-prices">
+                <span class="price-label">BUY</span>
+                <span class="buy">$${(e.buyPrice||0).toFixed(2)}</span>
+                <span class="price-label" style="margin-top:2px;">SELL</span>
+                <span class="sell">$${(e.sellPrice||0).toFixed(2)}</span>
+              </div>
+              <div style="display:flex;gap:4px;margin-top:4px;">
+                <button class="btn-icon edit" onclick="togglePLEdit('${e.id}')" title="Edit">✏</button>
+                <button class="btn-icon delete" onclick="deletePriceEntry('${e.id}')" title="Delete">🗑</button>
+              </div>
+            </div>
+          </div>
+        `).join("")}
+      </div>
+    `).join("");
+  }
+
+  function togglePLEdit(id) {
+    document.getElementById(`pledit-${id}`).classList.toggle("open");
+  }
+
+  function cancelPLEdit(id) {
+    document.getElementById(`pledit-${id}`).classList.remove("open");
+  }
+
+  async function savePriceEdit(id) {
+    const name  = document.getElementById(`pleName-${id}`).value.trim();
+    const buy   = parseFloat(document.getElementById(`pleBuy-${id}`).value);
+    const sell  = parseFloat(document.getElementById(`pleSell-${id}`).value);
+    const notes = document.getElementById(`pleNotes-${id}`).value.trim();
+
+    if (!name) { alert("Name required."); return; }
+
+    try {
+      await db.collection("pricelist").doc(id).update({ name, buyPrice: buy||0, sellPrice: sell||0, notes });
+      cancelPLEdit(id);
+      loadPriceList();
+    } catch (e) { alert("Save error: " + e.message); }
+  }
+
+  async function addPriceEntry() {
+    const msg  = document.getElementById("plMsg");
+    const name = document.getElementById("plName").value.trim();
+    const cat  = document.getElementById("plCat").value;
+    const buy  = parseFloat(document.getElementById("plBuy").value)  || 0;
+    const sell = parseFloat(document.getElementById("plSell").value) || 0;
+    const notes= document.getElementById("plNotes").value.trim();
+
+    if (!name || !cat) {
+      msg.innerHTML = `<div class="message error">⚠ Name and category required.</div>`;
+      return;
     }
 
-    async function addItem(e) {
-      e.preventDefault();
-      const msg = document.getElementById("addMsg");
+    try {
+      await db.collection("pricelist").add({ name, category: cat, buyPrice: buy, sellPrice: sell, notes, updatedAt: new Date().toISOString() });
+      msg.innerHTML = `<div class="message success">✓ Entry added.</div>`;
+      document.getElementById("plName").value  = "";
+      document.getElementById("plBuy").value   = "";
+      document.getElementById("plSell").value  = "";
+      document.getElementById("plNotes").value = "";
+      setTimeout(() => msg.innerHTML = "", 3000);
+      loadPriceList();
+    } catch (e) {
+      msg.innerHTML = `<div class="message error">✗ ${e.message}</div>`;
+    }
+  }
 
-      try {
-        await db.collection("items").add({
-          name: document.getElementById("itemName").value,
-          category: document.getElementById("itemCat").value,
-          price: parseFloat(document.getElementById("itemPrice").value),
-          condition: document.getElementById("itemCond").value,
-          visible: document.getElementById("itemVis").checked,
-          createdAt: new Date().toISOString()
-        });
-        msg.innerHTML = "<p class='message success'>✓ Item added successfully!</p>";
-        e.target.reset();
-        loadInventory();
-        setTimeout(() => msg.innerHTML = "", 3000);
-      } catch(e) {
-        msg.innerHTML = "<p class='message error'>✗ " + e.message + "</p>";
-      }
+  async function deletePriceEntry(id) {
+    if (!confirm("Delete this price entry?")) return;
+    try {
+      await db.collection("pricelist").doc(id).delete();
+      loadPriceList();
+    } catch (e) { alert(e.message); }
+  }
+
+  // ═══════════════════════════════════════════════════════════
+  //  STAFF MANAGEMENT
+  // ═══════════════════════════════════════════════════════════
+  async function loadStaff() {
+    const container = document.getElementById("staffList");
+    container.innerHTML = `<div class="empty-state"><span class="empty-icon">💀</span>Loading…</div>`;
+    try {
+      const snap = await db.collection("staff").get();
+      allStaff = [];
+      snap.forEach(doc => allStaff.push({ id: doc.id, ...doc.data() }));
+      renderStaff();
+    } catch (e) {
+      container.innerHTML = `<div class="message error">⚠ ${e.message}</div>`;
+    }
+  }
+
+  function renderStaff() {
+    const container = document.getElementById("staffList");
+
+    if (!allStaff.length) {
+      container.innerHTML = `<div class="empty-state"><span class="empty-icon">☠️</span>No staff found.</div>`;
+      return;
     }
 
-    async function deleteItem(id) {
-      if (confirm("Delete this item?")) {
-        try {
-          await db.collection("items").doc(id).delete();
-          loadInventory();
-        } catch(e) {
-          alert(e.message);
-        }
-      }
+    // Sort: managers first, then alphabetical
+    const sorted = [...allStaff].sort((a,b) => {
+      if (a.role === b.role) return (a.displayName||a.id).localeCompare(b.displayName||b.id);
+      return a.role === "manager" ? -1 : 1;
+    });
+
+    container.innerHTML = sorted.map(s => `
+      <div class="staff-card" id="sfcard-${s.id}">
+        <div class="staff-info" style="flex:1;">
+          <h3>${escHtml(s.displayName || s.id)}</h3>
+          <p>@${escHtml(s.id)}</p>
+
+          <!-- Staff edit form -->
+          <div class="edit-form" id="sfedit-${s.id}" style="margin-top:8px;">
+            <div class="form-row">
+              <div class="form-group">
+                <label>Display Name</label>
+                <input type="text" id="sfeName-${s.id}" value="${escHtml(s.displayName||'')}"/>
+              </div>
+              <div class="form-group">
+                <label>PIN</label>
+                <input type="text" id="sfePin-${s.id}" value="${escHtml(s.pin||'')}"/>
+              </div>
+            </div>
+            <div class="form-group">
+              <label>Role</label>
+              <select id="sfeRole-${s.id}">
+                <option value="staff"   ${s.role==='staff'   ?'selected':''}>Staff</option>
+                <option value="manager" ${s.role==='manager' ?'selected':''}>Manager</option>
+              </select>
+            </div>
+            <div style="display:flex;gap:6px;margin-top:4px;">
+              <button class="btn-edit btn-small" style="flex:1;" onclick="saveStaffEdit('${s.id}')">Save</button>
+              <button class="btn-ghost btn-small" style="flex:1;" onclick="cancelSfEdit('${s.id}')">Cancel</button>
+            </div>
+          </div>
+        </div>
+
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex-shrink:0;">
+          <span class="role-badge ${s.role||'staff'}">${cap(s.role||'staff')}</span>
+          <div style="display:flex;gap:4px;">
+            <button class="btn-icon edit" onclick="toggleSfEdit('${s.id}')" title="Edit">✏</button>
+            ${s.id !== currentUser ? `<button class="btn-icon delete" onclick="deleteStaff('${s.id}')" title="Remove">🗑</button>` : ''}
+          </div>
+        </div>
+      </div>
+    `).join("");
+  }
+
+  function toggleSfEdit(id) {
+    document.getElementById(`sfedit-${id}`).classList.toggle("open");
+  }
+
+  function cancelSfEdit(id) {
+    document.getElementById(`sfedit-${id}`).classList.remove("open");
+  }
+
+  async function saveStaffEdit(id) {
+    const name = document.getElementById(`sfeName-${id}`).value.trim();
+    const pin  = document.getElementById(`sfePin-${id}`).value.trim();
+    const role = document.getElementById(`sfeRole-${id}`).value;
+
+    if (!name || !pin) { alert("Name and PIN required."); return; }
+
+    try {
+      await db.collection("staff").doc(id).update({ displayName: name, pin, role });
+      cancelSfEdit(id);
+      loadStaff();
+    } catch (e) { alert("Save error: " + e.message); }
+  }
+
+  async function addStaff() {
+    const msg     = document.getElementById("sfMsg");
+    const username= document.getElementById("sfUsername").value.trim().toLowerCase();
+    const display = document.getElementById("sfDisplay").value.trim();
+    const pin     = document.getElementById("sfPin").value.trim();
+    const role    = document.getElementById("sfRole").value;
+
+    if (!username || !display || !pin) {
+      msg.innerHTML = `<div class="message error">⚠ All fields required.</div>`;
+      return;
     }
 
-    window.addEventListener("load", initFirebase);
+    try {
+      // Check if user already exists
+      const existing = await db.collection("staff").doc(username).get();
+      if (existing.exists) {
+        msg.innerHTML = `<div class="message error">⚠ Username already taken.</div>`;
+        return;
+      }
+
+      await db.collection("staff").doc(username).set({ displayName: display, pin, role, createdAt: new Date().toISOString() });
+      msg.innerHTML = `<div class="message success">✓ Staff member added.</div>`;
+      document.getElementById("sfUsername").value = "";
+      document.getElementById("sfDisplay").value  = "";
+      document.getElementById("sfPin").value      = "";
+      setTimeout(() => msg.innerHTML = "", 3000);
+      loadStaff();
+    } catch (e) {
+      msg.innerHTML = `<div class="message error">✗ ${e.message}</div>`;
+    }
+  }
+
+  async function deleteStaff(id) {
+    if (id === currentUser) { alert("You cannot remove yourself."); return; }
+    if (!confirm(`Remove staff member "${id}"?`)) return;
+    try {
+      await db.collection("staff").doc(id).delete();
+      loadStaff();
+    } catch (e) { alert(e.message); }
+  }
+
+  // ═══════════════════════════════════════════════════════════
+  //  UTILS
+  // ═══════════════════════════════════════════════════════════
+  function escHtml(str) {
+    return String(str||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+  }
+
+  function cap(str) {
+    return String(str||"").charAt(0).toUpperCase() + String(str||"").slice(1);
+  }
+
+  // ═══════════════════════════════════════════════════════════
+  //  BOOT
+  // ═══════════════════════════════════════════════════════════
+  window.addEventListener("load", initFirebase);
   </script>
 </body>
 </html>
