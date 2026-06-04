@@ -49,19 +49,10 @@
           <div class="logo">☠️</div>
           <h1>PAWN OF THE DEAD</h1>
         </div>
-        <p id="headerSub">For Sale — Cursed Inventory</p>
+        <p id="headerSub">What We Purchase</p>
 
-        <!-- FOR SALE filters -->
-        <div class="tab-controls active" id="ctrl-sale">
-          <div class="sort-controls">
-            <div class="search-bar">
-              <input type="text" id="saleSearch" placeholder="Search items…" oninput="applyFilters()"/>
-            </div>
-          </div>
-        </div>
-
-        <!-- WE BUY filters -->
-        <div class="tab-controls" id="ctrl-buy">
+        <!-- WE BUY filters (now first/default) -->
+        <div class="tab-controls active" id="ctrl-buy">
           <div class="sort-controls">
             <div class="search-bar">
               <input type="text" id="buySearch" placeholder="Search price list…" oninput="applyBuyFilter()"/>
@@ -69,22 +60,24 @@
           </div>
         </div>
 
+        <!-- FOR SALE filters -->
+        <div class="tab-controls" id="ctrl-sale">
+          <div class="sort-controls">
+            <div class="search-bar">
+              <input type="text" id="saleSearch" placeholder="Search items…" oninput="applyFilters()"/>
+            </div>
+          </div>
+        </div>
+
         <!-- Tab strip -->
         <div class="pub-tabs">
-          <button class="pub-tab active" id="tab-sale" onclick="switchTab('sale')">🏷 For Sale</button>
-          <button class="pub-tab"        id="tab-buy"  onclick="switchTab('buy')">💰 We Buy</button>
+          <button class="pub-tab active" id="tab-buy"  onclick="switchTab('buy')">💰 We Buy</button>
+          <button class="pub-tab"        id="tab-sale" onclick="switchTab('sale')">🛒 For Sale</button>
         </div>
       </header>
 
-      <!-- FOR SALE -->
-      <main id="page-sale" class="active">
-        <div id="itemsContainer">
-          <div class="empty-state"><span class="empty-icon">💀</span>Loading inventory…</div>
-        </div>
-      </main>
-
-      <!-- WE BUY (price list) -->
-      <main id="page-buy">
+      <!-- WE BUY (price list) — now first/default -->
+      <main id="page-buy" class="active">
         <!-- Legend -->
         <div style="display:flex;gap:12px;margin-bottom:10px;padding:6px 10px;background:var(--card-bg);border:1px solid var(--border-color);border-radius:var(--radius);font-size:0.7rem;align-items:center;">
           <span style="color:var(--success-text);">▲ We Pay</span>
@@ -92,6 +85,13 @@
         </div>
         <div id="priceListContainer">
           <div class="empty-state"><span class="empty-icon">💀</span>Loading prices…</div>
+        </div>
+      </main>
+
+      <!-- FOR SALE -->
+      <main id="page-sale">
+        <div id="itemsContainer">
+          <div class="empty-state"><span class="empty-icon">💀</span>Loading inventory…</div>
         </div>
       </main>
 
@@ -114,7 +114,7 @@
     let db         = null;
     let allItems   = [];
     let allPrices  = [];
-    let activeTab  = "sale";
+    let activeTab  = "buy";
     let priceLoaded = false;
 
     // ── Init ────────────────────────────────────────────────
@@ -122,10 +122,10 @@
       try {
         if (!firebase.apps || firebase.apps.length === 0) firebase.initializeApp(FB_CONFIG);
         db = firebase.firestore();
-        db.settings({ experimentalAutoDetectLongPolling: true, merge: true });
-        loadItems();
+        loadPriceList(); // We Buy is the default tab
+        loadItems();     // pre-load For Sale in background
       } catch (e) {
-        document.getElementById("itemsContainer").innerHTML =
+        document.getElementById("priceListContainer").innerHTML =
           `<div class="message error">Firebase error: ${e.message}</div>`;
       }
     }
@@ -147,11 +147,8 @@
       document.getElementById("ctrl-" + tab).classList.add("active");
 
       // Update subtitle
-      const subs = { sale: "For Sale — Cursed Inventory", buy: "What We Purchase" };
+      const subs = { buy: "What We Purchase", sale: "For Sale — Cursed Inventory" };
       document.getElementById("headerSub").textContent = subs[tab];
-
-      // Lazy-load price list on first visit
-      if (tab === "buy" && !priceLoaded) loadPriceList();
     }
 
     // ════════════════════════════════════════════════════════

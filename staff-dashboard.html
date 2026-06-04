@@ -226,7 +226,6 @@
       if (!firebase.apps || firebase.apps.length === 0) firebase.initializeApp(FB_CONFIG);
       db = firebase.firestore();
       // FiveM CEF fix — force long polling, avoid websocket / window refs
-      db.settings({ experimentalAutoDetectLongPolling: true, merge: true });
       checkAuth();
     } catch (e) {
       console.error("Firebase init:", e);

@@ -71,7 +71,6 @@
         db = firebase.firestore();
 
         // Disable long-polling / websockets that trip up FiveM's CEF
-        db.settings({ experimentalAutoDetectLongPolling: true, merge: true });
       } catch (e) {
         console.error("Firebase init error:", e);
       }
