@@ -109,15 +109,9 @@
               <input type="text" id="plNotes" placeholder="optional"/>
             </div>
           </div>
-          <div class="form-row">
-            <div class="form-group">
-              <label>We Buy ($)</label>
-              <input type="number" id="plBuy" step="0.01" min="0" placeholder="0.00"/>
-            </div>
-            <div class="form-group">
-              <label>We Sell ($)</label>
-              <input type="number" id="plSell" step="0.01" min="0" placeholder="0.00"/>
-            </div>
+          <div class="form-group">
+            <label>We Buy ($)</label>
+            <input type="number" id="plBuy" step="0.01" min="0" placeholder="0.00"/>
           </div>
           <button class="btn-secondary btn-small" style="width:100%;margin-top:4px;" onclick="addPriceEntry()">Save Entry</button>
           <div id="plMsg"></div>
@@ -542,10 +536,6 @@
                     <label>We Buy ($)</label>
                     <input type="number" id="pleBuy-${e.id}" value="${(e.buyPrice||0).toFixed(2)}" step="0.01"/>
                   </div>
-                  <div class="form-group">
-                    <label>We Sell ($)</label>
-                    <input type="number" id="pleSell-${e.id}" value="${(e.sellPrice||0).toFixed(2)}" step="0.01"/>
-                  </div>
                 </div>
                 <div class="form-group">
                   <label>Notes</label>
@@ -560,10 +550,8 @@
 
             <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0;">
               <div class="pricelist-prices">
-                <span class="price-label">BUY</span>
+                <span class="price-label">WE BUY</span>
                 <span class="buy">$${(e.buyPrice||0).toFixed(2)}</span>
-                <span class="price-label" style="margin-top:2px;">SELL</span>
-                <span class="sell">$${(e.sellPrice||0).toFixed(2)}</span>
               </div>
               <div style="display:flex;gap:4px;margin-top:4px;">
                 <button class="btn-icon edit" onclick="togglePLEdit('${e.id}')" title="Edit">✏</button>
@@ -587,13 +575,12 @@
   async function savePriceEdit(id) {
     const name  = document.getElementById(`pleName-${id}`).value.trim();
     const buy   = parseFloat(document.getElementById(`pleBuy-${id}`).value);
-    const sell  = parseFloat(document.getElementById(`pleSell-${id}`).value);
     const notes = document.getElementById(`pleNotes-${id}`).value.trim();
 
     if (!name) { alert("Name required."); return; }
 
     try {
-      await db.collection("pricelist").doc(id).update({ name, buyPrice: buy||0, sellPrice: sell||0, notes });
+      await db.collection("pricelist").doc(id).update({ name, buyPrice: buy||0, notes });
       cancelPLEdit(id);
       loadPriceList();
     } catch (e) { alert("Save error: " + e.message); }
@@ -603,8 +590,7 @@
     const msg  = document.getElementById("plMsg");
     const name = document.getElementById("plName").value.trim();
     const cat  = document.getElementById("plCat").value;
-    const buy  = parseFloat(document.getElementById("plBuy").value)  || 0;
-    const sell = parseFloat(document.getElementById("plSell").value) || 0;
+    const buy  = parseFloat(document.getElementById("plBuy").value) || 0;
     const notes= document.getElementById("plNotes").value.trim();
 
     if (!name || !cat) {
@@ -613,11 +599,10 @@
     }
 
     try {
-      await db.collection("pricelist").add({ name, category: cat, buyPrice: buy, sellPrice: sell, notes, updatedAt: new Date().toISOString() });
+      await db.collection("pricelist").add({ name, category: cat, buyPrice: buy, notes, updatedAt: new Date().toISOString() });
       msg.innerHTML = `<div class="message success">✓ Entry added.</div>`;
       document.getElementById("plName").value  = "";
       document.getElementById("plBuy").value   = "";
-      document.getElementById("plSell").value  = "";
       document.getElementById("plNotes").value = "";
       setTimeout(() => msg.innerHTML = "", 3000);
       loadPriceList();
