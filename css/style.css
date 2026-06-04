@@ -310,14 +310,14 @@ main::-webkit-scrollbar-thumb { background: var(--border-color); }
   border: 1px solid var(--border-color);
   border-left: 3px solid var(--accent-red);
   border-radius: var(--radius);
-  padding: 10px 12px;
-  margin-bottom: 8px;
+  padding: 8px 10px;
+  margin-bottom: 5px;
   transition: border-left-color 0.2s, box-shadow 0.2s;
 }
 
 .item-card:hover {
   border-left-color: var(--accent-orange);
-  box-shadow: 0 2px 12px rgba(139,0,0,0.2);
+  box-shadow: 0 2px 8px rgba(139,0,0,0.2);
 }
 
 .item-card:last-child { margin-bottom: 0; }
@@ -325,50 +325,50 @@ main::-webkit-scrollbar-thumb { background: var(--border-color); }
 .item-header {
   display: flex;
   justify-content: space-between;
-  align-items: flex-start;
+  align-items: center;
   gap: 8px;
-  margin-bottom: 4px;
 }
 
 .item-card h3 {
   font-family: 'Barlow Condensed', sans-serif;
-  font-size: 1rem;
+  font-size: 0.9rem;
   font-weight: 700;
   color: var(--primary-text);
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  line-height: 1.2;
+  line-height: 1;
 }
 
 .item-meta {
   display: flex;
-  gap: 8px;
+  gap: 6px;
   align-items: center;
-  margin: 4px 0;
+  margin-top: 3px;
   flex-wrap: wrap;
 }
 
 .item-category {
-  font-size: 0.7rem;
-  color: var(--accent-orange);
-  font-weight: 700;
+  font-size: 0.62rem;
+  color: var(--muted-text);
+  font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
 
 .item-price {
   font-family: 'Barlow Condensed', sans-serif;
-  font-size: 1.2rem;
+  font-size: 0.95rem;
   color: var(--accent-orange);
   font-weight: 700;
   line-height: 1;
+  white-space: nowrap;
 }
 
 .item-actions {
   display: flex;
   gap: 5px;
-  margin-top: 8px;
-  padding-top: 8px;
+  margin-top: 6px;
+  padding-top: 6px;
   border-top: 1px solid var(--border-color);
 }
 
@@ -413,8 +413,14 @@ main::-webkit-scrollbar-thumb { background: var(--border-color); }
   border: 1px solid var(--border-color);
   border-left: 3px solid var(--accent-orange);
   border-radius: var(--radius);
-  padding: 10px 12px;
-  margin-bottom: 8px;
+  padding: 8px 10px;
+  margin-bottom: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.pricelist-card-row {
   display: flex;
   justify-content: space-between;
   align-items: center;

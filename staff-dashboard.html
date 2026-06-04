@@ -72,7 +72,7 @@
           <select id="itemCat"><option value="">Select…</option></select>
         </div>
         <div class="form-group">
-          <label>Price ($)</label>
+          <label>Price (£)</label>
           <input type="number" id="itemPrice" step="0.01" min="0" placeholder="0.00"/>
         </div>
         <div class="form-group">
@@ -110,7 +110,7 @@
             </div>
           </div>
           <div class="form-group">
-            <label>We Buy ($)</label>
+            <label>We Buy (£)</label>
             <input type="number" id="plBuy" step="0.01" min="0" placeholder="0.00"/>
           </div>
           <button class="btn-secondary btn-small" style="width:100%;margin-top:4px;" onclick="addPriceEntry()">Save Entry</button>
@@ -341,7 +341,7 @@
     const value  = allInventory.reduce((s, i) => s + (i.price || 0), 0);
     document.getElementById("statTotal").textContent  = total;
     document.getElementById("statPublic").textContent = pub;
-    document.getElementById("statValue").textContent  = "$" + (value >= 1000 ? (value/1000).toFixed(1)+"k" : value.toFixed(0));
+    document.getElementById("statValue").textContent  = `£` + (value >= 1000 ? (value/1000).toFixed(1)+"k" : value.toFixed(0));
   }
 
   function filterInventory() {
@@ -367,10 +367,10 @@
       <div class="item-card" id="card-${item.id}">
         <div class="item-header">
           <h3>${escHtml(item.name)}</h3>
+          <span class="item-price">£${(item.price||0).toFixed(2)}</span>
         </div>
         <div class="item-meta">
           <span class="item-category">${item.category ? cap(item.category) : 'N/A'}</span>
-          <span class="item-price">$${(item.price||0).toFixed(2)}</span>
           <span class="vis-badge ${item.visible ? 'public' : 'hidden'}">${item.visible ? 'Public' : 'Hidden'}</span>
         </div>
 
@@ -386,7 +386,7 @@
           </div>
           <div class="form-row">
             <div class="form-group">
-              <label>Price ($)</label>
+              <label>Price (£)</label>
               <input type="number" id="ePrice-${item.id}" value="${(item.price||0).toFixed(2)}" step="0.01" min="0"/>
             </div>
             <div class="form-group" style="display:flex;align-items:flex-end;padding-bottom:2px;">
@@ -521,41 +521,38 @@
         <div class="category-label">${cap(cat)}</div>
         ${groups[cat].map(e => `
           <div class="pricelist-card" id="plcard-${e.id}">
-            <div class="pricelist-info" style="flex:1;">
-              <h3>${escHtml(e.name)}</h3>
-              ${e.notes ? `<p>${escHtml(e.notes)}</p>` : ''}
-
-              <!-- Edit form -->
-              <div class="edit-form" id="pledit-${e.id}">
-                <div class="form-group" style="margin-top:8px;">
-                  <label>Name</label>
-                  <input type="text" id="pleName-${e.id}" value="${escHtml(e.name)}"/>
+            <div class="pricelist-card-row">
+              <div class="pricelist-info" style="flex:1;">
+                <h3>${escHtml(e.name)}</h3>
+                ${e.notes ? `<p>${escHtml(e.notes)}</p>` : ''}
+              </div>
+              <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0;">
+                <div class="pricelist-prices">
+                  <span class="price-label">WE BUY</span>
+                  <span class="buy">£${(e.buyPrice||0).toFixed(2)}</span>
                 </div>
-                <div class="form-row">
-                  <div class="form-group">
-                    <label>We Buy ($)</label>
-                    <input type="number" id="pleBuy-${e.id}" value="${(e.buyPrice||0).toFixed(2)}" step="0.01"/>
-                  </div>
-                </div>
-                <div class="form-group">
-                  <label>Notes</label>
-                  <input type="text" id="pleNotes-${e.id}" value="${escHtml(e.notes||'')}"/>
-                </div>
-                <div style="display:flex;gap:6px;margin-top:4px;">
-                  <button class="btn-edit btn-small" style="flex:1;" onclick="savePriceEdit('${e.id}')">Save</button>
-                  <button class="btn-ghost btn-small" style="flex:1;" onclick="cancelPLEdit('${e.id}')">Cancel</button>
+                <div style="display:flex;gap:4px;">
+                  <button class="btn-icon edit" onclick="togglePLEdit('${e.id}')" title="Edit">✏</button>
+                  <button class="btn-icon delete" onclick="deletePriceEntry('${e.id}')" title="Delete">🗑</button>
                 </div>
               </div>
             </div>
-
-            <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0;">
-              <div class="pricelist-prices">
-                <span class="price-label">WE BUY</span>
-                <span class="buy">$${(e.buyPrice||0).toFixed(2)}</span>
+            <div class="edit-form" id="pledit-${e.id}">
+              <div class="form-group">
+                <label>Name</label>
+                <input type="text" id="pleName-${e.id}" value="${escHtml(e.name)}"/>
               </div>
-              <div style="display:flex;gap:4px;margin-top:4px;">
-                <button class="btn-icon edit" onclick="togglePLEdit('${e.id}')" title="Edit">✏</button>
-                <button class="btn-icon delete" onclick="deletePriceEntry('${e.id}')" title="Delete">🗑</button>
+              <div class="form-group">
+                <label>We Buy (£)</label>
+                <input type="number" id="pleBuy-${e.id}" value="${(e.buyPrice||0).toFixed(2)}" step="0.01"/>
+              </div>
+              <div class="form-group">
+                <label>Notes</label>
+                <input type="text" id="pleNotes-${e.id}" value="${escHtml(e.notes||'')}"/>
+              </div>
+              <div style="display:flex;gap:6px;margin-top:4px;">
+                <button class="btn-edit btn-small" style="flex:1;" onclick="savePriceEdit('${e.id}')">Save</button>
+                <button class="btn-ghost btn-small" style="flex:1;" onclick="cancelPLEdit('${e.id}')">Cancel</button>
               </div>
             </div>
           </div>

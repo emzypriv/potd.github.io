@@ -189,11 +189,11 @@
         <div class="item-card">
           <div class="item-header">
             <h3>${escHtml(item.name)}</h3>
+            <span class="item-price">£${(item.price||0).toFixed(2)}</span>
           </div>
           <div class="item-meta">
             <span class="item-category">${item.category ? cap(item.category) : 'N/A'}</span>
           </div>
-          <div class="item-price">$${(item.price||0).toFixed(2)}</div>
         </div>
       `).join("");
     }
@@ -250,15 +250,12 @@
         <div class="category-group">
           <div class="category-label">${cap(cat)}</div>
           ${groups[cat].map(e => `
-            <div class="pricelist-card">
-              <div class="pricelist-info">
+            <div class="item-card">
+              <div class="item-header">
                 <h3>${escHtml(e.name)}</h3>
-                ${e.notes ? `<p>${escHtml(e.notes)}</p>` : ''}
+                <span class="item-price">£${(e.buyPrice||0).toFixed(2)}</span>
               </div>
-              <div class="pricelist-prices">
-                <span class="price-label">WE PAY</span>
-                <span class="buy">$${(e.buyPrice||0).toFixed(2)}</span>
-              </div>
+              ${e.notes ? `<div class="item-meta"><span class="item-category">${escHtml(e.notes)}</span></div>` : ''}
             </div>
           `).join("")}
         </div>
