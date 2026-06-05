@@ -192,7 +192,7 @@
             <span class="item-price">£${(item.price||0).toFixed(2)}</span>
           </div>
           <div class="item-meta">
-            <span class="item-category">${item.category ? cap(item.category) : 'N/A'}</span>
+            <span class="item-category">📦 ${item.category ? cap(item.category) : 'N/A'}</span>
           </div>
         </div>
       `).join("");
@@ -248,7 +248,7 @@
 
       container.innerHTML = Object.keys(groups).sort().map(cat => `
         <div class="category-group">
-          <div class="category-label">${cap(cat)}</div>
+          <div class="category-label">📦 ${cap(cat)}</div>
           ${groups[cat].map(e => `
             <div class="item-card">
               <div class="item-header">

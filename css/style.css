@@ -47,6 +47,8 @@ html, body {
   width: 100%;
   height: 100%;
   font-family: 'Barlow', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 16px;
+  line-height: 1.5;
   background: #080908;
   color: var(--primary-text);
   overflow: hidden;
@@ -145,7 +147,7 @@ header::before {
 }
 
 header h1 {
-  font-size: 1.2rem;
+  font-size: 1.3rem;
   font-weight: 800;
   color: var(--primary-text);
   text-shadow: 0 0 12px rgba(160,200,48,0.3), 1px 1px 4px rgba(0,0,0,0.9);
@@ -155,7 +157,7 @@ header h1 {
 }
 
 header > p {
-  font-size: 0.72rem;
+  font-size: 0.92rem;
   color: var(--muted-text);
   margin: 2px 0 8px;
   font-style: italic;
@@ -186,7 +188,7 @@ nav::-webkit-scrollbar { display: none; }
   border: none;
   border-right: 1px solid var(--border-color);
   cursor: pointer;
-  font-size: 0.68rem;
+  font-size: 0.98rem;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.3px;
@@ -228,7 +230,7 @@ main::-webkit-scrollbar-thumb { background: var(--border-bright); }
 
 .section-title {
   font-family: 'Barlow Condensed', sans-serif;
-  font-size: 1.05rem;
+  font-size: 1.12rem;
   font-weight: 700;
   color: var(--primary-text);
   text-transform: uppercase;
@@ -271,7 +273,7 @@ main::-webkit-scrollbar-thumb { background: var(--border-bright); }
 }
 
 .stat-box .label {
-  font-size: 0.65rem;
+  font-size: 0.95rem;
   color: var(--muted-text);
   text-transform: uppercase;
   letter-spacing: 0.5px;
@@ -279,12 +281,12 @@ main::-webkit-scrollbar-thumb { background: var(--border-bright); }
 }
 
 .stat-box .value {
-  font-size: 1.4rem;
+  font-size: 1.5rem;
   color: var(--accent-glow);
   font-weight: 700;
-  margin-top: 3px;
+  margin-top: 5px;
   font-family: 'Barlow Condensed', sans-serif;
-  line-height: 1;
+  line-height: 1.3;
 }
 
 /* ============================================================
@@ -308,7 +310,7 @@ main::-webkit-scrollbar-thumb { background: var(--border-bright); }
 
 .filter-row select {
   flex: 1;
-  font-size: 0.78rem;
+  font-size: 0.98rem;
 }
 
 /* ============================================================
@@ -320,8 +322,8 @@ main::-webkit-scrollbar-thumb { background: var(--border-bright); }
   border: 1px solid var(--border-color);
   border-left: 3px solid var(--accent-red);
   border-radius: var(--radius);
-  padding: 8px 10px;
-  margin-bottom: 5px;
+  padding: 11px 13px;
+  margin-bottom: 8px;
   transition: border-left-color 0.2s, box-shadow 0.2s;
 }
 
@@ -341,24 +343,24 @@ main::-webkit-scrollbar-thumb { background: var(--border-bright); }
 
 .item-card h3 {
   font-family: 'Barlow Condensed', sans-serif;
-  font-size: 1rem;
+  font-size: 1.18rem;
   font-weight: 700;
   color: var(--primary-text);
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  line-height: 1;
+  line-height: 1.3;
 }
 
 .item-meta {
   display: flex;
   gap: 6px;
   align-items: center;
-  margin-top: 3px;
+  margin-top: 5px;
   flex-wrap: wrap;
 }
 
 .item-category {
-  font-size: 0.7rem;
+  font-size: 0.92rem;
   color: var(--muted-text);
   font-weight: 600;
   text-transform: uppercase;
@@ -367,18 +369,18 @@ main::-webkit-scrollbar-thumb { background: var(--border-bright); }
 
 .item-price {
   font-family: 'Barlow Condensed', sans-serif;
-  font-size: 1rem;
+  font-size: 1.18rem;
   color: var(--accent-glow);
   font-weight: 700;
-  line-height: 1;
+  line-height: 1.3;
   white-space: nowrap;
 }
 
 .item-actions {
   display: flex;
   gap: 5px;
-  margin-top: 6px;
-  padding-top: 6px;
+  margin-top: 9px;
+  padding-top: 8px;
   border-top: 1px solid var(--border-color);
 }
 
@@ -388,7 +390,7 @@ main::-webkit-scrollbar-thumb { background: var(--border-bright); }
   padding: 2px 7px;
   background: var(--accent-red);
   color: var(--primary-text);
-  font-size: 0.62rem;
+  font-size: 0.95rem;
   border-radius: 2px;
   font-weight: 700;
   letter-spacing: 0.5px;
@@ -399,7 +401,7 @@ main::-webkit-scrollbar-thumb { background: var(--border-bright); }
 .vis-badge {
   display: inline-block;
   padding: 2px 7px;
-  font-size: 0.62rem;
+  font-size: 0.95rem;
   font-weight: 700;
   letter-spacing: 0.5px;
   text-transform: uppercase;
@@ -418,8 +420,8 @@ main::-webkit-scrollbar-thumb { background: var(--border-bright); }
   border: 1px solid var(--border-color);
   border-left: 3px solid var(--accent-orange);
   border-radius: var(--radius);
-  padding: 8px 10px;
-  margin-bottom: 5px;
+  padding: 11px 13px;
+  margin-bottom: 8px;
   display: flex;
   flex-direction: column;
   gap: 6px;
@@ -439,7 +441,7 @@ main::-webkit-scrollbar-thumb { background: var(--border-bright); }
 
 .pricelist-info h3 {
   font-family: 'Barlow Condensed', sans-serif;
-  font-size: 1rem;
+  font-size: 1.18rem;
   font-weight: 700;
   color: var(--primary-text);
   text-transform: uppercase;
@@ -447,7 +449,7 @@ main::-webkit-scrollbar-thumb { background: var(--border-bright); }
 }
 
 .pricelist-info p {
-  font-size: 0.75rem;
+  font-size: 0.95rem;
   color: var(--muted-text);
   margin-top: 2px;
 }
@@ -459,7 +461,7 @@ main::-webkit-scrollbar-thumb { background: var(--border-bright); }
 
 .pricelist-prices .buy {
   font-family: 'Barlow Condensed', sans-serif;
-  font-size: 1.05rem;
+  font-size: 1.12rem;
   font-weight: 700;
   color: var(--accent-glow);
   display: block;
@@ -467,7 +469,7 @@ main::-webkit-scrollbar-thumb { background: var(--border-bright); }
 
 .pricelist-prices .sell {
   font-family: 'Barlow Condensed', sans-serif;
-  font-size: 1.05rem;
+  font-size: 1.12rem;
   font-weight: 700;
   color: var(--warning-text);
   display: block;
@@ -499,7 +501,7 @@ main::-webkit-scrollbar-thumb { background: var(--border-bright); }
 
 .staff-info h3 {
   font-family: 'Barlow Condensed', sans-serif;
-  font-size: 1rem;
+  font-size: 1.18rem;
   font-weight: 700;
   color: var(--primary-text);
   text-transform: uppercase;
@@ -507,7 +509,7 @@ main::-webkit-scrollbar-thumb { background: var(--border-bright); }
 }
 
 .staff-info p {
-  font-size: 0.75rem;
+  font-size: 0.95rem;
   color: var(--muted-text);
   margin-top: 2px;
 }
@@ -515,7 +517,7 @@ main::-webkit-scrollbar-thumb { background: var(--border-bright); }
 .role-badge {
   display: inline-block;
   padding: 2px 8px;
-  font-size: 0.65rem;
+  font-size: 0.95rem;
   font-weight: 700;
   letter-spacing: 0.5px;
   text-transform: uppercase;
@@ -538,7 +540,7 @@ main::-webkit-scrollbar-thumb { background: var(--border-bright); }
 
 label {
   display: block;
-  font-size: 0.75rem;
+  font-size: 0.95rem;
   font-weight: 700;
   color: var(--light-text);
   margin-bottom: 4px;
@@ -549,12 +551,12 @@ label {
 
 input, textarea, select {
   width: 100%;
-  padding: 8px 10px;
+  padding: 11px 13px;
   background: #0a0c06;
   border: 1px solid var(--border-color);
   color: var(--light-text);
   font-family: 'Barlow', sans-serif;
-  font-size: 0.88rem;
+  font-size: 0.98rem;
   border-radius: var(--radius);
   transition: border-color 0.15s, box-shadow 0.15s;
   -webkit-appearance: none;
@@ -584,7 +586,7 @@ select option {
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 0.85rem;
+  font-size: 0.95rem;
   color: var(--light-text);
   cursor: pointer;
 }
@@ -624,7 +626,7 @@ button { font-family: 'Barlow', sans-serif; cursor: pointer; }
   border-radius: var(--radius);
   font-weight: 700;
   text-transform: uppercase;
-  font-size: 0.85rem;
+  font-size: 0.95rem;
   letter-spacing: 0.5px;
   transition: all 0.15s;
   font-family: 'Barlow Condensed', sans-serif;
@@ -670,7 +672,7 @@ button { font-family: 'Barlow', sans-serif; cursor: pointer; }
 .btn-small {
   width: auto;
   padding: 5px 10px;
-  font-size: 0.72rem;
+  font-size: 0.92rem;
   margin: 0;
   display: inline-block;
 }
@@ -703,7 +705,7 @@ button { font-family: 'Barlow', sans-serif; cursor: pointer; }
 .message {
   padding: 8px 12px;
   border-radius: var(--radius);
-  font-size: 0.85rem;
+  font-size: 0.95rem;
   margin: 8px 0;
   border: 1px solid;
   font-weight: 500;
@@ -719,7 +721,7 @@ button { font-family: 'Barlow', sans-serif; cursor: pointer; }
   text-align: center;
   padding: 30px 20px;
   color: var(--muted-text);
-  font-size: 0.88rem;
+  font-size: 0.98rem;
   font-style: italic;
 }
 
@@ -739,7 +741,7 @@ button { font-family: 'Barlow', sans-serif; cursor: pointer; }
   justify-content: space-between;
   align-items: center;
   background: #141710;
-  padding: 8px 10px;
+  padding: 11px 13px;
   margin: 4px 0;
   border: 1px solid var(--border-color);
   border-radius: var(--radius);
@@ -747,7 +749,7 @@ button { font-family: 'Barlow', sans-serif; cursor: pointer; }
 
 .option-item span {
   color: var(--light-text);
-  font-size: 0.88rem;
+  font-size: 0.98rem;
   text-transform: capitalize;
 }
 
@@ -761,7 +763,7 @@ button { font-family: 'Barlow', sans-serif; cursor: pointer; }
 .add-option-row input {
   flex: 1;
   padding: 6px 8px;
-  font-size: 0.82rem;
+  font-size: 0.92rem;
 }
 
 /* ============================================================
@@ -776,7 +778,7 @@ button { font-family: 'Barlow', sans-serif; cursor: pointer; }
 .sort-controls select {
   width: 100%;
   padding: 7px 10px;
-  font-size: 0.78rem;
+  font-size: 0.98rem;
 }
 
 /* ============================================================
@@ -824,12 +826,12 @@ button { font-family: 'Barlow', sans-serif; cursor: pointer; }
   text-shadow: 0 0 20px rgba(160,200,48,0.3), 2px 2px 8px rgba(0,0,0,0.9);
   letter-spacing: 2px;
   text-transform: uppercase;
-  line-height: 1;
+  line-height: 1.3;
   margin-bottom: 6px;
 }
 
 .brand-sub {
-  font-size: 0.7rem;
+  font-size: 0.92rem;
   color: var(--muted-text);
   letter-spacing: 1px;
   text-transform: uppercase;
@@ -858,7 +860,7 @@ button { font-family: 'Barlow', sans-serif; cursor: pointer; }
 
 .login-heading {
   font-family: 'Barlow Condensed', sans-serif;
-  font-size: 1.15rem;
+  font-size: 1.3rem;
   font-weight: 700;
   color: var(--primary-text);
   margin-bottom: 16px;
@@ -871,7 +873,7 @@ button { font-family: 'Barlow', sans-serif; cursor: pointer; }
 
 .field-label {
   display: block;
-  font-size: 0.72rem;
+  font-size: 0.92rem;
   color: var(--muted-text);
   margin-bottom: 4px;
   text-transform: uppercase;
@@ -903,7 +905,7 @@ button { font-family: 'Barlow', sans-serif; cursor: pointer; }
 
 .login-error {
   color: var(--warning-text);
-  font-size: 0.82rem;
+  font-size: 0.92rem;
   margin-top: 10px;
   min-height: 1.1rem;
   text-align: center;
@@ -925,7 +927,7 @@ button { font-family: 'Barlow', sans-serif; cursor: pointer; }
 
 .category-label {
   font-family: 'Barlow Condensed', sans-serif;
-  font-size: 0.78rem;
+  font-size: 0.98rem;
   font-weight: 700;
   color: var(--accent-orange);
   text-transform: uppercase;
@@ -954,7 +956,7 @@ button { font-family: 'Barlow', sans-serif; cursor: pointer; }
   margin-bottom: -2px;
   color: var(--muted-text);
   font-family: 'Barlow Condensed', sans-serif;
-  font-size: 0.88rem;
+  font-size: 0.98rem;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 1px;
