@@ -363,8 +363,11 @@
       return;
     }
 
-    container.innerHTML = items.map(item => `
-      <div class="item-card" id="card-${item.id}">
+    // Store items by index so we can look them up safely without raw Firestore IDs in DOM
+    window._invItems = items;
+
+    container.innerHTML = items.map((item, idx) => `
+      <div class="item-card" id="card-${idx}">
         <div class="item-header">
           <h3>${escHtml(item.name)}</h3>
           <span class="item-price">£${(item.price||0).toFixed(2)}</span>
@@ -374,70 +377,76 @@
           <span class="vis-badge ${item.visible ? 'public' : 'hidden'}">${item.visible ? 'Public' : 'Hidden'}</span>
         </div>
 
-        <!-- Inline edit form (hidden by default) -->
-        <div class="edit-form" id="edit-${item.id}">
+        <!-- Inline edit form -->
+        <div class="edit-form" id="edit-${idx}">
           <div class="form-group">
             <label>Name</label>
-            <input type="text" id="eName-${item.id}" value="${escHtml(item.name)}"/>
+            <input type="text" id="eName-${idx}" value="${escHtml(item.name)}"/>
           </div>
           <div class="form-group">
             <label>Category</label>
-            <select id="eCat-${item.id}">${catOptions(item.category)}</select>
+            <select id="eCat-${idx}"></select>
           </div>
           <div class="form-row">
             <div class="form-group">
               <label>Price (£)</label>
-              <input type="number" id="ePrice-${item.id}" value="${(item.price||0).toFixed(2)}" step="0.01" min="0"/>
+              <input type="number" id="ePrice-${idx}" value="${(item.price||0).toFixed(2)}" step="0.01" min="0"/>
             </div>
             <div class="form-group" style="display:flex;align-items:flex-end;padding-bottom:2px;">
               <label class="checkbox-label">
-                <input type="checkbox" id="eVis-${item.id}" ${item.visible ? 'checked' : ''}/>
+                <input type="checkbox" id="eVis-${idx}" ${item.visible ? 'checked' : ''}/>
                 Public
               </label>
             </div>
           </div>
           <div style="display:flex;gap:6px;">
-            <button class="btn-edit btn-small" style="flex:1;" onclick="saveEdit('${item.id}')">Save</button>
-            <button class="btn-ghost btn-small" style="flex:1;" onclick="cancelEdit('${item.id}')">Cancel</button>
+            <button class="btn-edit btn-small" style="flex:1;" onclick="saveEdit(${idx})">Save</button>
+            <button class="btn-ghost btn-small" style="flex:1;" onclick="cancelEdit(${idx})">Cancel</button>
           </div>
         </div>
 
         <div class="item-actions">
-          <button class="btn-icon edit" onclick="toggleEdit('${item.id}')" title="Edit">✏</button>
+          <button class="btn-icon edit" onclick="toggleEdit(${idx})" title="Edit">✏</button>
           <button class="btn-icon delete" onclick="deleteItem('${item.id}')" title="Delete">🗑</button>
         </div>
       </div>
     `).join("");
   }
 
-  function catOptions(selected) {
-    return categories.map(c =>
-      `<option value="${c}" ${c===selected?'selected':''}>${cap(c)}</option>`
-    ).join("");
-  }
+  function toggleEdit(idx) {
+    const form = document.getElementById(`edit-${idx}`);
+    const isOpen = form.classList.contains("open");
 
-  function toggleEdit(id) {
-    const form = document.getElementById(`edit-${id}`);
+    // Populate the category select fresh each time it opens
+    if (!isOpen) {
+      const item = window._invItems[idx];
+      const sel  = document.getElementById(`eCat-${idx}`);
+      sel.innerHTML = categories.map(c =>
+        `<option value="${c}" ${c === (item.category||'') ? 'selected' : ''}>${cap(c)}</option>`
+      ).join("");
+    }
+
     form.classList.toggle("open");
   }
 
-  function cancelEdit(id) {
-    document.getElementById(`edit-${id}`).classList.remove("open");
+  function cancelEdit(idx) {
+    document.getElementById(`edit-${idx}`).classList.remove("open");
   }
 
-  async function saveEdit(id) {
-    const name  = document.getElementById(`eName-${id}`).value.trim();
-    const cat   = document.getElementById(`eCat-${id}`).value;
-    const price = parseFloat(document.getElementById(`ePrice-${id}`).value);
-    const vis   = document.getElementById(`eVis-${id}`).checked;
+  async function saveEdit(idx) {
+    const item  = window._invItems[idx];
+    const name  = document.getElementById(`eName-${idx}`).value.trim();
+    const cat   = document.getElementById(`eCat-${idx}`).value;
+    const price = parseFloat(document.getElementById(`ePrice-${idx}`).value);
+    const vis   = document.getElementById(`eVis-${idx}`).checked;
 
     if (!name || !cat || isNaN(price)) {
       alert("Please fill in all fields."); return;
     }
 
     try {
-      await db.collection("items").doc(id).update({ name, category: cat, price, visible: vis });
-      cancelEdit(id);
+      await db.collection("items").doc(item.id).update({ name, category: cat, price, visible: vis });
+      cancelEdit(idx);
       loadInventory();
     } catch (e) { alert("Save error: " + e.message); }
   }
