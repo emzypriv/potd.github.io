@@ -255,7 +255,6 @@
                 <h3>${escHtml(e.name)}</h3>
                 <span class="item-price">£${(e.buyPrice||0).toFixed(2)}</span>
               </div>
-              ${e.notes ? `<div class="item-meta"><span class="item-category">${escHtml(e.notes)}</span></div>` : ''}
             </div>
           `).join("")}
         </div>

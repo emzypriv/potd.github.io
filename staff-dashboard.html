@@ -99,15 +99,9 @@
             <label>Item Name</label>
             <input type="text" id="plName" placeholder="e.g. Rusty Pistol"/>
           </div>
-          <div class="form-row">
-            <div class="form-group">
-              <label>Category</label>
-              <select id="plCat"><option value="">Select…</option></select>
-            </div>
-            <div class="form-group">
-              <label>Notes</label>
-              <input type="text" id="plNotes" placeholder="optional"/>
-            </div>
+          <div class="form-group">
+            <label>Category</label>
+            <select id="plCat"><option value="">Select…</option></select>
           </div>
           <div class="form-group">
             <label>We Buy (£)</label>
@@ -229,7 +223,7 @@
   // ═══════════════════════════════════════════════════════════
   //  AUTH
   // ═══════════════════════════════════════════════════════════
-  function checkAuth() {
+  async function checkAuth() {
     currentUser = sessionStorage.getItem("potd_user") || "";
     currentRole = sessionStorage.getItem("potd_role") || "";
     const display = sessionStorage.getItem("potd_display") || currentUser;
@@ -240,7 +234,9 @@
     }
 
     document.getElementById("welcomeMsg").textContent = `Welcome, ${display}`;
-    loadOptions();
+
+    // Load options FIRST so categories are ready before inventory renders
+    await loadOptions();
     loadInventory();
   }
 
@@ -517,23 +513,25 @@
       return;
     }
 
+    // Store for index-based lookup (avoids Firestore ID issues in CEF)
+    window._plItems = entries;
+
     // Group by category
     const groups = {};
-    entries.forEach(e => {
+    entries.forEach((e, idx) => {
       const k = e.category || "Uncategorised";
       if (!groups[k]) groups[k] = [];
-      groups[k].push(e);
+      groups[k].push({ ...e, _idx: idx });
     });
 
     container.innerHTML = Object.keys(groups).sort().map(cat => `
       <div class="category-group">
         <div class="category-label">${cap(cat)}</div>
         ${groups[cat].map(e => `
-          <div class="pricelist-card" id="plcard-${e.id}">
+          <div class="pricelist-card" id="plcard-${e._idx}">
             <div class="pricelist-card-row">
               <div class="pricelist-info" style="flex:1;">
                 <h3>${escHtml(e.name)}</h3>
-                ${e.notes ? `<p>${escHtml(e.notes)}</p>` : ''}
               </div>
               <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0;">
                 <div class="pricelist-prices">
@@ -541,27 +539,27 @@
                   <span class="buy">£${(e.buyPrice||0).toFixed(2)}</span>
                 </div>
                 <div style="display:flex;gap:4px;">
-                  <button class="btn-icon edit" onclick="togglePLEdit('${e.id}')" title="Edit">✏</button>
-                  <button class="btn-icon delete" onclick="deletePriceEntry('${e.id}')" title="Delete">🗑</button>
+                  <button class="btn-icon edit" onclick="togglePLEdit(${e._idx})" title="Edit">✏</button>
+                  <button class="btn-icon delete" onclick="deletePriceEntry(${e._idx})" title="Delete">🗑</button>
                 </div>
               </div>
             </div>
-            <div class="edit-form" id="pledit-${e.id}">
+            <div class="edit-form" id="pledit-${e._idx}">
               <div class="form-group">
                 <label>Name</label>
-                <input type="text" id="pleName-${e.id}" value="${escHtml(e.name)}"/>
+                <input type="text" id="pleName-${e._idx}" value="${escHtml(e.name)}"/>
+              </div>
+              <div class="form-group">
+                <label>Category</label>
+                <select id="pleCat-${e._idx}"></select>
               </div>
               <div class="form-group">
                 <label>We Buy (£)</label>
-                <input type="number" id="pleBuy-${e.id}" value="${(e.buyPrice||0).toFixed(2)}" step="0.01"/>
-              </div>
-              <div class="form-group">
-                <label>Notes</label>
-                <input type="text" id="pleNotes-${e.id}" value="${escHtml(e.notes||'')}"/>
+                <input type="number" id="pleBuy-${e._idx}" value="${(e.buyPrice||0).toFixed(2)}" step="0.01" min="0"/>
               </div>
               <div style="display:flex;gap:6px;margin-top:4px;">
-                <button class="btn-edit btn-small" style="flex:1;" onclick="savePriceEdit('${e.id}')">Save</button>
-                <button class="btn-ghost btn-small" style="flex:1;" onclick="cancelPLEdit('${e.id}')">Cancel</button>
+                <button class="btn-edit btn-small" style="flex:1;" onclick="savePriceEdit(${e._idx})">Save</button>
+                <button class="btn-ghost btn-small" style="flex:1;" onclick="cancelPLEdit(${e._idx})">Cancel</button>
               </div>
             </div>
           </div>
@@ -570,26 +568,48 @@
     `).join("");
   }
 
-  function togglePLEdit(id) {
-    document.getElementById(`pledit-${id}`).classList.toggle("open");
+  function togglePLEdit(idx) {
+    const form = document.getElementById(`pledit-${idx}`);
+    const isOpen = form.classList.contains("open");
+
+    if (!isOpen) {
+      // Populate category select fresh on open
+      const entry = window._plItems[idx];
+      const sel   = document.getElementById(`pleCat-${idx}`);
+      sel.innerHTML = categories.map(c =>
+        `<option value="${c}" ${c === (entry.category||'') ? 'selected' : ''}>${cap(c)}</option>`
+      ).join("");
+    }
+
+    form.classList.toggle("open");
   }
 
-  function cancelPLEdit(id) {
-    document.getElementById(`pledit-${id}`).classList.remove("open");
+  function cancelPLEdit(idx) {
+    document.getElementById(`pledit-${idx}`).classList.remove("open");
   }
 
-  async function savePriceEdit(id) {
-    const name  = document.getElementById(`pleName-${id}`).value.trim();
-    const buy   = parseFloat(document.getElementById(`pleBuy-${id}`).value);
-    const notes = document.getElementById(`pleNotes-${id}`).value.trim();
+  async function savePriceEdit(idx) {
+    const entry = window._plItems[idx];
+    const name  = document.getElementById(`pleName-${idx}`).value.trim();
+    const cat   = document.getElementById(`pleCat-${idx}`).value;
+    const buy   = parseFloat(document.getElementById(`pleBuy-${idx}`).value) || 0;
 
-    if (!name) { alert("Name required."); return; }
+    if (!name || !cat) { alert("Name and category required."); return; }
 
     try {
-      await db.collection("pricelist").doc(id).update({ name, buyPrice: buy||0, notes });
-      cancelPLEdit(id);
+      await db.collection("pricelist").doc(entry.id).update({ name, category: cat, buyPrice: buy });
+      cancelPLEdit(idx);
       loadPriceList();
     } catch (e) { alert("Save error: " + e.message); }
+  }
+
+  async function deletePriceEntry(idx) {
+    const entry = window._plItems[idx];
+    if (!confirm("Delete this price entry?")) return;
+    try {
+      await db.collection("pricelist").doc(entry.id).delete();
+      loadPriceList();
+    } catch (e) { alert(e.message); }
   }
 
   async function addPriceEntry() {
@@ -597,7 +617,6 @@
     const name = document.getElementById("plName").value.trim();
     const cat  = document.getElementById("plCat").value;
     const buy  = parseFloat(document.getElementById("plBuy").value) || 0;
-    const notes= document.getElementById("plNotes").value.trim();
 
     if (!name || !cat) {
       msg.innerHTML = `<div class="message error">⚠ Name and category required.</div>`;
@@ -605,11 +624,10 @@
     }
 
     try {
-      await db.collection("pricelist").add({ name, category: cat, buyPrice: buy, notes, updatedAt: new Date().toISOString() });
+      await db.collection("pricelist").add({ name, category: cat, buyPrice: buy, updatedAt: new Date().toISOString() });
       msg.innerHTML = `<div class="message success">✓ Entry added.</div>`;
-      document.getElementById("plName").value  = "";
-      document.getElementById("plBuy").value   = "";
-      document.getElementById("plNotes").value = "";
+      document.getElementById("plName").value = "";
+      document.getElementById("plBuy").value  = "";
       setTimeout(() => msg.innerHTML = "", 3000);
       loadPriceList();
     } catch (e) {
